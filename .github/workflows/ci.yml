@@ -65,6 +65,7 @@ jobs:
         with:
           path: sahara
           fetch-depth: 1
+          submodules: recursive
 
       - name: Install Tools on Ubuntu
         run: |
@@ -73,7 +74,7 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           sudo apt-get update -y
           sudo apt-get install -y build-essential libfmt-dev
-          brew install --force-bottle cereal zlib boost cmake fmt pkg-config ${{ matrix.brew_pkgs }}
+          brew install --force-bottle zlib boost cmake fmt pkg-config ${{ matrix.brew_pkgs }}
           ${{ matrix.cxx }} --version
 
       - name: Tool versions
