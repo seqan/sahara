@@ -8,8 +8,13 @@ cmake_minimum_required (VERSION 3.16)
 
 project (sahara VERSION 1.0.0)
 
+# Force language standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 find_package(fmt REQUIRED)
-find_package(cereal REQUIRED HINTS lib/fmindex-collection/lib)
-find_package(fmindex_collection REQUIRED HINTS lib/fmindex-collection)
+find_package(cereal REQUIRED PATHS lib/fmindex-collection/lib)
+find_package(fmindex_collection REQUIRED PATHS lib/fmindex-collection)
 
 add_subdirectory(src/sahara)
