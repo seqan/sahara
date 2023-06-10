@@ -83,7 +83,7 @@ jobs:
       - name: Generate report and upload
         run: |
           source ${HOME}/.activate_brew
-          cd sahara/sahara-build
+          cd sahara/build
           lcov -c --directory . --output coverage.info --gcov ${{ matrix.gcov }}
           lcov --remove coverage.info '/usr/include/*' --output-file coverage.info
           lcov --remove coverage.info '/home/linuxbrew/*' --output-file coverage.info
