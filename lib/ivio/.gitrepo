@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:SGSSGene/IVio.git
+	branch = main
+	commit = 01260ef946cff3e84f0d18c3e9265c163ff37157
+	parent = 37e81166249b777de9b3b88ac897c12e9b81b8f9
+	method = merge
+	cmdver = 0.4.6
