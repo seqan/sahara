@@ -68,7 +68,6 @@ auto loadConfig() {
     config.queryPath     = *cliQuery;
     config.indexPath     = *cliIndex;
     config.algorithms    = {*cliAlgo};
-    config.extensions    = {"?"};
     config.generator     = *cliGenerator;
     config.generator_dyn = cliDynGenerator;
     config.minK          = *cliNumErrors;
@@ -103,16 +102,6 @@ void app() {
     for (auto const& algorithm : config.algorithms) {
         fmt::print("using algorithm {}\n", algorithm);
 
-        auto mut_queries = queries;
-        if (config.maxQueries != 0) {
-            mut_queries.resize(std::min(mut_queries.size(), config.maxQueries));
-        }
-        if (config.readLength != 0) {
-            for (auto& q : mut_queries) {
-                q.resize(std::min(config.readLength, q.size()));
-            }
-        }
-
         auto memory = [&] () -> size_t {
             if constexpr (OccTableMemoryUsage<Table>) {
                 return index.memoryUsage();
@@ -126,7 +115,7 @@ void app() {
                 if (iter == search_schemes::generator::all.end()) {
                     throw std::runtime_error("unknown search scheme generetaror \"" + config.generator + "\"");
                 }
-                auto len = mut_queries[0].size();
+                auto len = queries[0].size();
                 auto oss = iter->second(0, k, 0, 0); //!TODO last two parameters of second are not being used
                 auto ess = search_schemes::expand(oss, len);
                 auto dss = search_schemes::expandDynamic(oss, len, 4, 3'000'000'000); //!TODO use correct Sigma and text size
@@ -145,7 +134,7 @@ void app() {
                         if (iter == search_schemes::generator::all.end()) {
                             throw std::runtime_error("unknown search scheme generetaror \"" + config.generator + "\"");
                         }
-                        auto len = mut_queries[0].size();
+                        auto len = queries[0].size();
                         auto oss = iter->second(j, j, 0, 0); //!TODO last two parameters of second are not being used
                         auto ess = search_schemes::expand(oss, len);
                         auto dss = search_schemes::expandDynamic(oss, len, 4, 3'000'000'000); //!TODO use correct Sigma and text size
@@ -179,52 +168,52 @@ void app() {
 
 
 
-            if (algorithm == "pseudo") search_pseudo::search<true>(index, mut_queries, search_scheme, res_cb);
-            if (algorithm == "pseudo_ham") search_pseudo::search<false>(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm.size() == 15 && algorithm.substr(0, 13) == "pseudo_fmtree")  search_pseudo::search<true>(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "pseudo_fmtree")  search_pseudo::search<true>(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng12") search_ng12::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng14") search_ng14::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng15") search_ng15::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng16") search_ng16::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng17") search_ng17::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng20") search_ng20::search(index, mut_queries, search_scheme, res_cb);
+            if (algorithm == "pseudo") search_pseudo::search<true>(index, queries, search_scheme, res_cb);
+            if (algorithm == "pseudo_ham") search_pseudo::search<false>(index, queries, search_scheme, res_cb);
+            else if (algorithm.size() == 15 && algorithm.substr(0, 13) == "pseudo_fmtree")  search_pseudo::search<true>(index, queries, search_scheme, res_cb);
+            else if (algorithm == "pseudo_fmtree")  search_pseudo::search<true>(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng12") search_ng12::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng14") search_ng14::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng15") search_ng15::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng16") search_ng16::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng17") search_ng17::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng20") search_ng20::search(index, queries, search_scheme, res_cb);
             else if (algorithm == "ng21") {
                 if (config.mode == Config::Mode::All) {
-                    if (config.maxHitsPerQuery == 0) search_ng21::search(index, mut_queries, search_scheme, res_cb);
-                    else                             search_ng21::search_n(index, mut_queries, search_scheme, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21::search(index, queries, search_scheme, res_cb);
+                    else                             search_ng21::search_n(index, queries, search_scheme, config.maxHitsPerQuery, res_cb);
                 } else if (config.mode == Config::Mode::BestHits) {
-                    if (config.maxHitsPerQuery == 0) search_ng21::search_best(index, mut_queries, search_schemes, res_cb);
-                    else                             search_ng21::search_best_n(index, mut_queries, search_schemes, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21::search_best(index, queries, search_schemes, res_cb);
+                    else                             search_ng21::search_best_n(index, queries, search_schemes, config.maxHitsPerQuery, res_cb);
                 }
             }
-            else if (algorithm == "ng21v2") search_ng21V2::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng21v3") search_ng21V3::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng21v4") search_ng21V4::search(index, mut_queries, search_scheme, res_cb);
-            else if (algorithm == "ng21v5") search_ng21V5::search(index, mut_queries, search_scheme, res_cb);
+            else if (algorithm == "ng21v2") search_ng21V2::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng21v3") search_ng21V3::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng21v4") search_ng21V4::search(index, queries, search_scheme, res_cb);
+            else if (algorithm == "ng21v5") search_ng21V5::search(index, queries, search_scheme, res_cb);
             else if (algorithm == "ng21v6") {
                 if (config.mode == Config::Mode::All) {
-                    if (config.maxHitsPerQuery == 0) search_ng21V6::search(index, mut_queries, search_scheme, res_cb);
-                    else                             search_ng21V6::search_n(index, mut_queries, search_scheme, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21V6::search(index, queries, search_scheme, res_cb);
+                    else                             search_ng21V6::search_n(index, queries, search_scheme, config.maxHitsPerQuery, res_cb);
                 } else if (config.mode == Config::Mode::BestHits) {
-                    if (config.maxHitsPerQuery == 0) search_ng21V6::search_best(index, mut_queries, search_schemes, res_cb);
-                    else                             search_ng21V6::search_best_n(index, mut_queries, search_schemes, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21V6::search_best(index, queries, search_schemes, res_cb);
+                    else                             search_ng21V6::search_best_n(index, queries, search_schemes, config.maxHitsPerQuery, res_cb);
                 }
             }
             else if (algorithm == "ng21v7") {
                 if (config.mode == Config::Mode::All) {
-                    if (config.maxHitsPerQuery == 0) search_ng21V7::search(index, mut_queries, search_scheme, res_cb);
-                    else                             search_ng21V7::search_n(index, mut_queries, search_scheme, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21V7::search(index, queries, search_scheme, res_cb);
+                    else                             search_ng21V7::search_n(index, queries, search_scheme, config.maxHitsPerQuery, res_cb);
                 } else if (config.mode == Config::Mode::BestHits) {
-                    if (config.maxHitsPerQuery == 0) search_ng21V7::search_best(index, mut_queries, search_scheme, res_cb);
-                    else                             search_ng21V7::search_best_n(index, mut_queries, search_scheme, config.maxHitsPerQuery, res_cb);
+                    if (config.maxHitsPerQuery == 0) search_ng21V7::search_best(index, queries, search_scheme, res_cb);
+                    else                             search_ng21V7::search_best_n(index, queries, search_scheme, config.maxHitsPerQuery, res_cb);
                 }
             }
-            else if (algorithm == "ng22") search_ng22::search(index, mut_queries, search_scheme, res_cb2);
-            else if (algorithm == "noerror") search_no_errors::search(index, mut_queries, [&](size_t queryId, auto cursor) {
+            else if (algorithm == "ng22") search_ng22::search(index, queries, search_scheme, res_cb2);
+            else if (algorithm == "noerror") search_no_errors::search(index, queries, [&](size_t queryId, auto cursor) {
                 res_cb(queryId, cursor, 0);
             });
-            else if (algorithm == "oneerror") search_one_error::search(index, mut_queries,res_cb);
+            else if (algorithm == "oneerror") search_one_error::search(index, queries,res_cb);
 
 
             auto time_search = sw.reset();
@@ -263,14 +252,14 @@ void app() {
             }(results);
             std::unordered_set<size_t> readIds;
             for (auto const& [queryId, cursor, e] : resultCursors) {
-                if (queryId > mut_queries.size()/2) {
-                    readIds.insert(queryId - mut_queries.size() / 2);
+                if (queryId > queries.size()/2) {
+                    readIds.insert(queryId - queries.size() / 2);
                 } else {
                     readIds.insert(queryId);
                 }
             }
 
-            fmt::print("{:15} {:3}: {:>10.3}s ({:>10.3}s+{:>10.3}s) {:>10.3}q/s - results: {:>10}/{:>10}/{:>10}/{:>10} - mem: {:>13}\n", name, k, time_search + time_locate, time_search, time_locate, mut_queries.size() / (time_search+time_locate), resultCt, results.size(), uniqueResults.size(), readIds.size(), memory);
+            fmt::print("{:15} {:3}: {:>10.3}s ({:>10.3}s+{:>10.3}s) {:>10.3}q/s - results: {:>10}/{:>10}/{:>10}/{:>10} - mem: {:>13}\n", name, k, time_search + time_locate, time_search, time_locate, queries.size() / (time_search+time_locate), resultCt, results.size(), uniqueResults.size(), readIds.size(), memory);
             {
                 if (!config.saveOutput.empty()) {
                     auto ofs = fopen(config.saveOutput.string().c_str(), "w");
