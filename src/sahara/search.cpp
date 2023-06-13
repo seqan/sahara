@@ -54,7 +54,8 @@ auto cliNoReverse = clice::Argument{ .parent = &cli,
 auto cliSearchMode = clice::Argument{ .parent = &cli,
                                      .arg    = "--search_mode",
                                      .desc   = "do not search for reversed complements",
-                                     .value  = std::string{"all"}
+                                     .value  = Config::Mode::All,
+                                     .mapping = {{{"all", Config::Mode::All}, {"besthits", Config::Mode::BestHits}}},
 };
 
 
@@ -67,9 +68,7 @@ auto loadConfig() {
     config.generator_dyn = cliDynGenerator;
     config.k             = *cliNumErrors;
     config.reverse       = cliNoReverse;
-    if (*cliSearchMode == "besthits") {
-        config.mode = Config::Mode::BestHits;
-    }
+    config.mode          = *cliSearchMode;
     return config;
 
 }

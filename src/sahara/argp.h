@@ -18,7 +18,6 @@ struct Config {
     enum class Mode {
         All,
         BestHits,
-    };
-    Mode mode {Mode::All};
+    } mode;
     size_t maxHitsPerQuery{0};
 };
