@@ -91,14 +91,18 @@ void app() {
         }
     }();
     auto k = *cliNumErrors;
-    auto generator = *cliGenerator;
-    auto search_scheme = [&]() {
-        auto iter = search_schemes::generator::all.find(generator);
+
+    auto generator = [&]() {
+        auto iter = search_schemes::generator::all.find(*cliGenerator);
         if (iter == search_schemes::generator::all.end()) {
-            throw std::runtime_error("unknown search scheme generetaror \"" + generator + "\"");
+            throw std::runtime_error("unknown search scheme generetaror \"" + *cliGenerator + "\"");
         }
+        return iter->second;
+    }();
+
+    auto loadSearchScheme = [&](int minK, int maxK) {
         auto len = queries[0].size();
-        auto oss = iter->second(0, k, 0, 0); //!TODO last two parameters of second are not being used
+        auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
         auto ess = search_schemes::expand(oss, len);
         auto dss = search_schemes::expandDynamic(oss, len, Sigma, 3'000'000'000); //!TODO use correct text/ref size
         fmt::print("ss diff: {} to {}, using dyn: {}\n", search_schemes::expectedNodeCount(ess, Sigma, 3'000'000'000), search_schemes::expectedNodeCount(dss, Sigma, 3'000'000'000), cliDynGenerator);
@@ -107,33 +111,16 @@ void app() {
         } else {
             return dss;
         }
-    }();
-    auto search_schemes = [&]() {
-        auto r = std::vector<decltype(search_scheme)>{};
-        for (size_t j{0}; j<=k; ++j) {
-            r.emplace_back([&]() {
-                auto iter = search_schemes::generator::all.find(generator);
-                if (iter == search_schemes::generator::all.end()) {
-                    throw std::runtime_error("unknown search scheme generetaror \"" + generator + "\"");
-                }
-                auto len = queries[0].size();
-                auto oss = iter->second(j, j, 0, 0); //!TODO last two parameters of second are not being used
-                auto ess = search_schemes::expand(oss, len);
-                auto dss = search_schemes::expandDynamic(oss, len, Sigma, 3'000'000'000); //!TODO use correct ref/text size
-                if (!cliDynGenerator) {
-                    return ess;
-                } else {
-                    return dss;
-                }
-            }());
-        }
-        return r;
-    }();
+    };
 
-    size_t resultCt{};
+    auto search_scheme  = loadSearchScheme(0, k);
+    auto search_schemes = std::vector<decltype(search_scheme)>{};
+    for (size_t j{0}; j<=k; ++j) {
+        search_schemes.emplace_back(loadSearchScheme(j, j));
+    }
+
     StopWatch sw;
     auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
-
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
@@ -148,7 +135,8 @@ void app() {
 
     auto time_search = sw.reset();
 
-    auto results       = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
+    size_t resultCt{};
+    auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
         for (auto [seqId, pos] : LocateLinear{index, cursor}) {
             results.emplace_back(queryId, seqId, pos, e);
