@@ -6,10 +6,15 @@
 # -----------------------------------------------------------------------------------------------------
 cmake_minimum_required (VERSION 3.14)
 
-add_executable(sahara main.cpp)
+add_executable(sahara
+    index.cpp
+    search.cpp
+    main.cpp
+)
 
 target_link_libraries(sahara
     fmindex-collection::fmindex-collection
     fmt::fmt
+    clice::clice
     cereal::cereal
 )

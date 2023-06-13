@@ -88,7 +88,7 @@ struct Argument {
         return isSet;
     }
 
-    auto operator*() const -> decltype(auto) {
+    auto operator*() const -> auto const& {
         if constexpr (std::is_invocable_v<T>) {
             using R = std::decay_t<decltype(value())>;
             if (!anyType.has_value()) {

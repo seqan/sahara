@@ -16,5 +16,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(fmt REQUIRED)
 find_package(cereal REQUIRED PATHS lib/fmindex-collection/lib)
 find_package(fmindex_collection REQUIRED PATHS lib/fmindex-collection)
+find_package(clice REQUIRED PATHS lib/clice)
 
 add_subdirectory(src/sahara)
