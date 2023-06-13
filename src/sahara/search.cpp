@@ -113,22 +113,20 @@ void app() {
         }
     };
 
-    auto search_scheme  = loadSearchScheme(0, k);
-    auto search_schemes = std::vector<decltype(search_scheme)>{};
-    for (size_t j{0}; j<=k; ++j) {
-        search_schemes.emplace_back(loadSearchScheme(j, j));
-    }
-
     StopWatch sw;
     auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
-
     if (*cliSearchMode == SearchMode::All) {
+        auto search_scheme  = loadSearchScheme(0, k);
         if (*cliMaxHits == 0) search_ng21::search(index, queries, search_scheme, res_cb);
         else                  search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
-    } else if (*cliSearchMode == SearchMode::BestHits) {
+    } else {
+        auto search_schemes = std::vector<decltype(loadSearchScheme(0, k))>{};
+        for (size_t j{0}; j<=k; ++j) {
+            search_schemes.emplace_back(loadSearchScheme(j, j));
+        }
         if (*cliMaxHits == 0) search_ng21::search_best(index, queries, search_schemes, res_cb);
         else                  search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
     }
