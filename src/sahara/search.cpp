@@ -100,8 +100,8 @@ void app() {
         auto len = queries[0].size();
         auto oss = iter->second(0, k, 0, 0); //!TODO last two parameters of second are not being used
         auto ess = search_schemes::expand(oss, len);
-        auto dss = search_schemes::expandDynamic(oss, len, 4, 3'000'000'000); //!TODO use correct Sigma and text size
-        fmt::print("ss diff: {} to {}, using dyn: {}\n", search_schemes::expectedNodeCount(ess, 4, 3'000'000'000), search_schemes::expectedNodeCount(dss, 4, 3'000'000'000), cliDynGenerator);
+        auto dss = search_schemes::expandDynamic(oss, len, Sigma, 3'000'000'000); //!TODO use correct text/ref size
+        fmt::print("ss diff: {} to {}, using dyn: {}\n", search_schemes::expectedNodeCount(ess, Sigma, 3'000'000'000), search_schemes::expectedNodeCount(dss, Sigma, 3'000'000'000), cliDynGenerator);
         if (!cliDynGenerator) {
             return ess;
         } else {
@@ -119,7 +119,7 @@ void app() {
                 auto len = queries[0].size();
                 auto oss = iter->second(j, j, 0, 0); //!TODO last two parameters of second are not being used
                 auto ess = search_schemes::expand(oss, len);
-                auto dss = search_schemes::expandDynamic(oss, len, 4, 3'000'000'000); //!TODO use correct Sigma and text size
+                auto dss = search_schemes::expandDynamic(oss, len, Sigma, 3'000'000'000); //!TODO use correct ref/text size
                 if (!cliDynGenerator) {
                     return ess;
                 } else {
@@ -132,20 +132,10 @@ void app() {
 
     size_t resultCt{};
     StopWatch sw;
-    auto results       = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
-    auto resultCursorsEditTranscript = std::vector<std::string>{};
 
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
-    };
-    auto res_cb2 = [&](size_t queryId, auto cursor, size_t errors, auto const& actions) {
-        std::string s;
-        for (auto a : actions) {
-            s += a;
-        }
-        resultCursors.emplace_back(queryId, cursor, errors);
-        resultCursorsEditTranscript.emplace_back(std::move(s));
     };
 
     if (*cliSearchMode == SearchMode::All) {
@@ -158,6 +148,7 @@ void app() {
 
     auto time_search = sw.reset();
 
+    auto results       = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
         for (auto [seqId, pos] : LocateLinear{index, cursor}) {
             results.emplace_back(queryId, seqId, pos, e);
