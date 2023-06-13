@@ -9,8 +9,16 @@ The following alphabets are available
 | `ivs::rna5`      | `ivs::aa10murphy`| `ivs::pthred94`       |
 | `ivs::iupac`     |                  |                       |
 | `ivs::dna3bs`    |                  |                       |
+| `ivs::d_dna4`    |                  |                       |
+| `ivs::d_dna5`    |                  |                       |
+| `ivs::d_rna4`    |                  |                       |
+| `ivs::d_rna5`    |                  |                       |
+| `ivs::d_iupac`   |                  |                       |
+| `ivs::d_dna3bs`  |                  |                       |
+
 
 ## Nucleotide based
+Alphabets starting with `d_` are alphabets with a additional delimiter '$' as rank 0.
 - `#!cpp uint8_t char_to_rank(char)`
 - `#!cpp char rank_to_char(uint8_t)`
 - `#!cpp char normalize_char(char)`
@@ -18,6 +26,7 @@ The following alphabets are available
 - `#!cpp uint8_t complement_rank(uint8_t)`
 
 All functions are guarenteed to not throw.
+
 
 ## Amino acid based
 - `#!cpp uint8_t char_to_rank(char)`

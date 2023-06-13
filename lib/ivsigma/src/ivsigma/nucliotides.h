@@ -7,6 +7,7 @@
 #pragma once
 
 #include "simple_alphabet.h"
+#include "delimited_alphabet.h"
 
 namespace ivs {
 
@@ -66,5 +67,24 @@ struct dna3bs : simple_alphabet<rank_char_mapping<   0,    'A',   'a'>,
                                 rank_char_mapping<   2,    'T',   't', 'C', 'c'>>
 {};
 static_assert(alphabet_c<dna3bs>, "Unit test: is supposed to model an alphabet");
+
+
+struct d_dna4 : delimited_alphabet<dna4> {};
+static_assert(alphabet_c<d_dna4>, "Unit test: is supposed to model an alphabet");
+
+struct d_dna5 : delimited_alphabet<dna5> {};
+static_assert(alphabet_c<d_dna5>, "Unit test: is supposed to model an alphabet");
+
+struct d_iupac : delimited_alphabet<iupac> {};
+static_assert(alphabet_c<d_iupac>, "Unit test: is supposed to model an alphabet");
+
+struct d_rna4 : delimited_alphabet<rna4> {};
+static_assert(alphabet_c<d_dna4>, "Unit test: is supposed to model an alphabet");
+
+struct d_rna5 : delimited_alphabet<rna5> {};
+static_assert(alphabet_c<d_rna5>, "Unit test: is supposed to model an alphabet");
+
+struct d_dna3bs : delimited_alphabet<dna3bs> {};
+static_assert(alphabet_c<d_dna3bs>, "Unit test: is supposed to model an alphabet");
 
 }

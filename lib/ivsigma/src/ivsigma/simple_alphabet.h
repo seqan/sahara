@@ -64,19 +64,8 @@ private:
         return table;
     }()};
 
-    //! Table computing the complement in rank space (rank in, rank out)
-    static constexpr std::array<uint8_t, 256> rank_complement_table{[]() {
-        auto table = std::array<uint8_t, 256>{};
-        table.fill(255);
-        auto add_values_to_table = [&]<typename V>(V) {
-            table[V::rank] = char_to_rank_table[V::complement];
-        };
-        (add_values_to_table(values{}), ...);
-        return table;
-    }()};
-
 public:
-    /*! \brief Conerts a single char value to a rank value
+    /*! \brief Converts a single char value to a rank value
      *
      * \param c char value
      * \return corresponding rank value
@@ -100,7 +89,7 @@ public:
      * \param c char value
      * \return corresponding normalized char value
      */
-    static constexpr auto normalize_char(char c) noexcept -> uint8_t {
+    static constexpr auto normalize_char(char c) noexcept -> char {
         auto index = static_cast<uint8_t>(c);
         return normalize_char_table[index];
     }
@@ -172,7 +161,7 @@ public:
      * \param c char value
      * \return corresponding normalized char value
      */
-    static constexpr auto normalize_char(char c) noexcept -> uint8_t {
+    static constexpr auto normalize_char(char c) noexcept -> char {
         auto index = static_cast<uint8_t>(c);
         return normalize_char_table[index];
     }

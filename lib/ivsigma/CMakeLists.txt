@@ -4,6 +4,12 @@
 # This file may be used, modified and/or redistributed under the terms of the 3-clause BSD-License
 # shipped with this file.
 # -----------------------------------------------------------------------------------------------------
+
+# This file is called in the following scenarios
+# 1. scenario: this file is at the root of a `cmake ..` call.
+#       In this case we assume this project is compiled for packaging or testing.
+# 2. scenario: another project is adding this directory via "add_subdirectory".
+#       In this case we don't want any tests to be included.
 cmake_minimum_required (VERSION 3.14)
 
 # check if this is the main project
@@ -17,14 +23,12 @@ if (NOT DEFINED PROJECT_NAME)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -pedantic")
     endif()
     set(ROOT_PROJECT TRUE)
-else()
-    set(ROOT_PROJECT FALSE)
 endif ()
 
+project(ivsigma LANGUAGES CXX VERSION "${IVIO_PROJECT_VERSION}"
+            DESCRIPTION "ivsigma -- utilities function for dna4, dna5, aa and many more ... alphabets")
 
-project(IVSigma)
-
-add_subdirectory(src/ivsigma)
+include(ivsigma-config.cmake)
 
 if (${ROOT_PROJECT})
     find_package (fmt REQUIRED)
