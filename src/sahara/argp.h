@@ -12,8 +12,6 @@ struct Config {
     size_t k;
     bool reverse{true};
 
-    std::vector<std::string> algorithms;
-
     std::string queryPath{};
     std::string indexPath{};
 
