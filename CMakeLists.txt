@@ -17,5 +17,7 @@ find_package(fmt REQUIRED)
 find_package(cereal REQUIRED PATHS lib/fmindex-collection/lib)
 find_package(fmindex_collection REQUIRED PATHS lib/fmindex-collection)
 find_package(clice REQUIRED PATHS lib/clice)
+find_package(ivio REQUIRED PATHS lib/ivio)
+find_package(ivsigma REQUIRED PATHS lib/ivsigma)
 
 add_subdirectory(src/sahara)

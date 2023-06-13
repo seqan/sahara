@@ -21,7 +21,7 @@ void app() {
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
 
     // load fasta file
-    auto [ref, refInfo] = loadQueries<Table::Sigma>(*cli, false);
+    auto [ref, refInfo] = loadQueries<Table::Sigma>(*cli, /*reverse*/false);
 
     // create index
     auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};

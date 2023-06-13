@@ -15,6 +15,8 @@ add_executable(sahara
 target_link_libraries(sahara
     fmindex-collection::fmindex-collection
     fmt::fmt
+    ivio::ivio
+    ivsigma::ivsigma
     clice::clice
     cereal::cereal
 )
