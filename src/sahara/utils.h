@@ -42,7 +42,7 @@ auto loadQueries(std::filesystem::path path, bool reverse) {
 template <typename CSA, typename Table>
 auto loadIndex(std::string path, size_t samplingRate, size_t threadNbr) {
     auto sw = StopWatch{};
-    auto indexPath = path + "." + Table::extension() + ".index";
+    auto indexPath = path + ".idx";
     if (!std::filesystem::exists(indexPath)) {
         auto [ref, refInfo] = loadQueries<Table::Sigma>(path, false);
         auto index = fmindex_collection::BiFMIndex<Table>{ref, samplingRate, threadNbr};
@@ -64,7 +64,7 @@ auto loadIndex(std::string path, size_t samplingRate, size_t threadNbr) {
 template <typename CSA, typename Table>
 auto loadDenseIndex(std::string path, size_t samplingRate, size_t threadNbr) {
     auto sw = StopWatch{};
-    auto indexPath = path + "." + Table::extension() + ".dense.index";
+    auto indexPath = path + ".idx";
     if (!std::filesystem::exists(indexPath)) {
         auto [ref, refInfo] = loadQueries<Table::Sigma>(path, false);
         auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, samplingRate, threadNbr};

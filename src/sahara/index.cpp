@@ -43,7 +43,7 @@ void app() {
     timing.emplace_back("index creation", stopWatch.reset());
 
     // save index
-    auto indexPath = cli->string() + "." + Table::extension() + ".dense.index";
+    auto indexPath = cli->string() + ".idx";
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
     archive(index);
