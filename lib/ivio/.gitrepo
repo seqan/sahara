@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:SGSSGene/IVio.git
 	branch = main
-	commit = 01260ef946cff3e84f0d18c3e9265c163ff37157
-	parent = 37e81166249b777de9b3b88ac897c12e9b81b8f9
+	commit = 7303571e0ed857142bcf009c6d16baebb77e93ff
+	parent = e1491d418387d6cbaded9e2a16844f842fc20105
 	method = merge
 	cmdver = 0.4.6
