@@ -23,16 +23,16 @@ jobs:
       fail-fast: false
       matrix:
         osname: ["Ubuntu 22.04"]
-        compiler: ["gcc12 (c++20)"]
+        compiler: ["gcc13 (c++20)"]
         include:
           - osname: "Ubuntu 22.04"
             os: ubuntu-22.04
-            compiler: "gcc12 (c++20)"
-            cxx: "g++-12"
-            cc: "gcc-12"
-            gcov: "gcov-12"
+            compiler: "gcc13 (c++20)"
+            cxx: "g++-13"
+            cc: "gcc-13"
+            gcov: "gcov-13"
             build_type: Debug
-            brew_pkgs: gcc@12 lcov
+            brew_pkgs: gcc@13 lcov
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -49,11 +49,6 @@ jobs:
           sudo apt-get install -y build-essential libfmt-dev
           brew install --force-bottle zlib boost cmake fmt pkg-config ${{ matrix.brew_pkgs }}
           ${{ matrix.cxx }} --version
-
-      - name: Force brew package
-        run: |
-          echo 'export LIBRARY_PATH=/home/linuxbrew/.linuxbrew/lib' >> ${HOME}/.activate_brew
-        if: matrix.compiler == 'gcc10 (c++20)'
 
       - name: Tool versions
         run: |
@@ -89,9 +84,9 @@ jobs:
           source ${HOME}/.activate_brew
           cd ivio/ivio-build
           lcov -c --directory . --output coverage.info --gcov ${{ matrix.gcov }}
-          lcov --remove coverage.info '/usr/include/*' --output-file coverage.info
-          lcov --remove coverage.info '/home/linuxbrew/*' --output-file coverage.info
-          lcov --remove coverage.info '*/lib/*' --output-file coverage.info
+          lcov --remove coverage.info --ignore-errors unused '/usr/include/*' --output-file coverage.info
+          lcov --remove coverage.info --ignore-errors unused '/home/linuxbrew/*' --output-file coverage.info
+          lcov --remove coverage.info --ignore-errors unused '*/lib/*' --output-file coverage.info
           lcov --list coverage.info
           #gcovr -r ../ivio . --xml -o report.xml -e ../ivio/lib --exclude-noncode-lines --exclude-unreachable-branches --exclude-function-lines
           #gcovr -r ../ . --html --html-details --html-syntax-highlighting -o report.html -e ../lib
