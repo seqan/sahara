@@ -1,12 +1,18 @@
+#include "error_fmt.h"
 #include "utils.h"
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/array.hpp>
+#include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <cstdio>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
 #include <fmt/format.h>
+#include <fmt/std.h>
+#include <fstream>
 #include <search_schemes/expand.h>
 #include <search_schemes/generator/all.h>
+#include <search_schemes/nodeCount.h>
 #include <unordered_set>
 
 using namespace fmindex_collection;
@@ -29,6 +35,13 @@ auto cliIndex = clice::Argument{ .parent = &cli,
                                  .desc   = "path to the index file",
                                  .value  = std::filesystem::path{},
 };
+
+auto cliOutput = clice::Argument{ .parent = &cli,
+                                  .arg    = "--output",
+                                  .desc   = "output path",
+                                  .value  = std::filesystem::path{"sahara-output.txt"},
+};
+
 
 auto cliGenerator  = clice::Argument{ .parent = &cli,
                                       .arg    = "--generator",
@@ -67,35 +80,61 @@ auto cliMaxHits   = clice::Argument{ .parent = &cli,
 void app() {
     constexpr size_t Sigma = 5;
 
+    auto timing = std::vector<std::tuple<std::string, double>>{};
+
+    auto stopWatch = StopWatch();
+
     auto const [queries, queryInfos] = loadQueries<Sigma>(*cliQuery, !cliNoReverse);
     if (queries.empty()) {
-        fmt::print("query file was empty - abort\n");
-        return;
+        throw error_fmt{"query file {} was empty - abort\n", *cliQuery};
     }
-    fmt::print("loaded {} queries (incl reverse complements)\n", queries.size());
-    fmt::print("{:15}: {:>10}  ({:>10} +{:>10} ) {:>10}    - results: {:>10}/{:>10}/{:>10}/{:>10} - mem: {:>13}\n", "name", "time_search + time_locate", "time_search", "time_locate", "(time_search+time_locate)/queries.size()", "resultCt", "results.size()", "uniqueResults.size()", "readIds.size()", "memory");
+    timing.emplace_back("ld queries", stopWatch.reset());
+
+    fmt::print(
+        "config:\n"
+        "  query:               {}\n"
+        "  index:               {}\n"
+        "  generator:           {}\n"
+        "  dynamic expansion:   {}\n"
+        "  allowed errors:      {}\n"
+        "  reverse complements: {}\n"
+        "  search mode:         {}\n"
+        "  max hits:            {}\n"
+        "  output path:         {}\n",
+        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrors, !cliNoReverse,
+        *cliSearchMode == SearchMode::BestHits?"besthits":"all", *cliMaxHits,
+        *cliOutput);
+
+
+    {
+        auto fwdQueries = queries.size() / (cliNoReverse?1:2);
+        auto bwdQueries = fwdQueries * (cliNoReverse?0:1);
+        fmt::print("fwd queries: {}\n"
+                   "bwd queries: {}\n",
+                   fwdQueries, bwdQueries);
+    }
 
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
 //    using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
-    auto name = Table::extension();
-    fmt::print("start loading {} ...", name);
-    fflush(stdout);
-    auto index = loadDenseIndex<CSA, Table>(*cliIndex, /*samplingRate*/16, /*threadNbr*/1);
-    fmt::print("done\n");
 
-    auto memory = [&] () -> size_t {
-        if constexpr (OccTableMemoryUsage<Table>) {
-            return index.memoryUsage();
-        } else {
-            return 0ull;
-        }
-    }();
+    if (!std::filesystem::exists(*cliIndex)) {
+        throw error_fmt{"no valid index path at {}", *cliIndex};
+    }
+
+    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    {
+        auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
+        auto archive = cereal::BinaryInputArchive{ifs};
+        archive(index);
+    }
+    timing.emplace_back("ld index", stopWatch.reset());
+
     auto k = *cliNumErrors;
 
     auto generator = [&]() {
         auto iter = search_schemes::generator::all.find(*cliGenerator);
         if (iter == search_schemes::generator::all.end()) {
-            throw std::runtime_error("unknown search scheme generetaror \"" + *cliGenerator + "\"");
+            throw error_fmt{"unknown search scheme generetaror \"{}\"", *cliGenerator};
         }
         return iter->second;
     }();
@@ -103,69 +142,64 @@ void app() {
     auto loadSearchScheme = [&](int minK, int maxK) {
         auto len = queries[0].size();
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
-        auto ess = search_schemes::expand(oss, len);
-        auto dss = search_schemes::expandDynamic(oss, len, Sigma, 3'000'000'000); //!TODO use correct text/ref size
-        fmt::print("ss diff: {} to {}, using dyn: {}\n", search_schemes::expectedNodeCount(ess, Sigma, 3'000'000'000), search_schemes::expectedNodeCount(dss, Sigma, 3'000'000'000), cliDynGenerator);
         if (!cliDynGenerator) {
-            return ess;
+            oss = search_schemes::expand(oss, len);
         } else {
-            return dss;
+            oss = search_schemes::expandDynamic(oss, len, Sigma, index.size());
         }
+        fmt::print("node count: {}\n", search_schemes::nodeCount(oss, Sigma));
+        fmt::print("expected node count: {}\n", search_schemes::expectedNodeCount(oss, Sigma, index.size()));
+        return oss;
     };
 
-    StopWatch sw;
     auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
     if (*cliSearchMode == SearchMode::All) {
         auto search_scheme  = loadSearchScheme(0, k);
-        if (*cliMaxHits == 0) search_ng21::search(index, queries, search_scheme, res_cb);
-        else                  search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
+        timing.emplace_back("searchScheme", stopWatch.reset());
+
+        search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
     } else {
         auto search_schemes = std::vector<decltype(loadSearchScheme(0, k))>{};
         for (size_t j{0}; j<=k; ++j) {
             search_schemes.emplace_back(loadSearchScheme(j, j));
         }
-        if (*cliMaxHits == 0) search_ng21::search_best(index, queries, search_schemes, res_cb);
-        else                  search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
+        timing.emplace_back("searchScheme", stopWatch.reset());
+
+        search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
     }
+    timing.emplace_back("search", stopWatch.reset());
 
-    auto time_search = sw.reset();
-
-    size_t resultCt{};
     auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
         for (auto [seqId, pos] : LocateLinear{index, cursor}) {
             results.emplace_back(queryId, seqId, pos, e);
         }
-        resultCt += cursor.len;
-    }
-    auto time_locate = sw.reset();
-
-    auto uniqueResults = [](auto list) {
-        std::sort(begin(list), end(list));
-        list.erase(std::unique(begin(list), end(list)), list.end());
-        return list;
-    }(results);
-    auto readIds = std::unordered_set<size_t>{};
-    for (auto const& [queryId, cursor, e] : resultCursors) {
-        if (queryId > queries.size()/2) {
-            readIds.insert(queryId - queries.size() / 2);
-        } else {
-            readIds.insert(queryId);
-        }
     }
 
-    fmt::print("{:15} {:3}: {:>10.3}s ({:>10.3}s+{:>10.3}s) {:>10.3}q/s - results: {:>10}/{:>10}/{:>10}/{:>10} - mem: {:>13}\n", name, k, time_search + time_locate, time_search, time_locate, queries.size() / (time_search+time_locate), resultCt, results.size(), uniqueResults.size(), readIds.size(), memory);
+    timing.emplace_back("locate", stopWatch.reset());
+
+    auto finishTime = std::chrono::steady_clock::now();
     {
-//        if (!config.saveOutput.empty()) {
-//            auto ofs = fopen(config.saveOutput.string().c_str(), "w");
-//            for (auto const& [queryId, seqId, pos, e] : results) {
-//                fmt::print(ofs, "{} {} {}\n", queryId, seqId, pos);
-//            }
-//            fclose(ofs);
-//        }
+        auto ofs = fopen(cliOutput->c_str(), "w");
+        for (auto const& [queryId, seqId, pos, e] : results) {
+            fmt::print(ofs, "{} {} {}\n", queryId, seqId, pos);
+        }
+        fclose(ofs);
     }
+
+    timing.emplace_back("result", stopWatch.reset());
+
+    fmt::print("stats:\n");
+    double totalTime{};
+    for (auto const& [key, time] : timing) {
+        fmt::print("  {:<20} {:> 10.2f}s\n", key + " time:", time);
+        totalTime += time;
+    }
+    fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
+    fmt::print("  queries per second:  {:> 10.0f}q/s\n", queries.size() / totalTime);
+    fmt::print("  number of hits:      {:>10}\n", results.size());
 }
 }
