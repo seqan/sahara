@@ -16,59 +16,59 @@ inline auto generatePartialSynopsis(ArgumentBase const& arg) -> std::string {
     } else if (arg.mapping) {
         ret += fmt::format(" [{}]", fmt::join(*arg.mapping, "|"));
     } else if (arg.type_index == std::type_index(typeid(char))) {
-        ret += " _char_";
+        ret += " CHAR ";
     } else if (arg.type_index == std::type_index(typeid(bool))) {
         ret += " [true|false]";
     } else if (arg.type_index == std::type_index(typeid(int8_t))) {
-        ret += " _int8_";
+        ret += " INT8";
     } else if (arg.type_index == std::type_index(typeid(uint8_t))) {
-        ret += " _uint8_";
+        ret += " UINT8";
     } else if (arg.type_index == std::type_index(typeid(int16_t))) {
-        ret += " _int16_";
+        ret += " INT16";
     } else if (arg.type_index == std::type_index(typeid(uint16_t))) {
-        ret += " _uint16_";
+        ret += " UINT16";
     } else if (arg.type_index == std::type_index(typeid(int32_t))) {
-        ret += " _int32_";
+        ret += " INT32";
     } else if (arg.type_index == std::type_index(typeid(uint32_t))) {
-        ret += " _uint32_";
+        ret += " UINT32";
     } else if (arg.type_index == std::type_index(typeid(int64_t))) {
-        ret += " _int64_";
+        ret += " INT64";
     } else if (arg.type_index == std::type_index(typeid(uint64_t))) {
-        ret += " _uint64_";
+        ret += " UINT64";
     } else if (arg.type_index == std::type_index(typeid(float))) {
-        ret += " _float_";
+        ret += " FLOAT";
     } else if (arg.type_index == std::type_index(typeid(double))) {
-        ret += " _double_";
+        ret += " DOUBLE";
     } else if (arg.type_index == std::type_index(typeid(std::string))) {
-        ret += " _string_";
+        ret += " STRING";
     } else if (arg.type_index == std::type_index(typeid(std::filesystem::path))) {
-        ret += " _path_";
+        ret += " PATH";
     } else if (arg.type_index == std::type_index(typeid(std::vector<bool>))) {
         ret += " [true|false] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int8_t>))) {
-        ret += " [_int8_] ...";
+        ret += " [INT8] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint8_t>))) {
-        ret += " [_uint8_] ...";
+        ret += " [UINT8] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int16_t>))) {
-        ret += " [_int16_] ...";
+        ret += " [INT16] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint16_t>))) {
-        ret += " [_uint16_] ...";
+        ret += " [UINT16] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int32_t>))) {
-        ret += " [_int32_] ...";
+        ret += " [INT32] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint32_t>))) {
-        ret += " [_uint32_] ...";
+        ret += " [UINT32] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int64_t>))) {
-        ret += " [_int64_] ...";
+        ret += " [INT64] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint64_t>))) {
-        ret += " [_uint64_] ...";
+        ret += " [UINT64] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<float>))) {
-        ret += " [_float_] ...";
+        ret += " [FLOAT] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<double>))) {
-        ret += " [_double_] ...";
+        ret += " [DOUBLE] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<std::string>))) {
-        ret += " [_string_] ...";
+        ret += " [STRING] ...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<std::filesystem::path>))) {
-        ret += " [_path_] ...";
+        ret += " [PATH] ...";
 
     } else {
         ret += " _unknown_";

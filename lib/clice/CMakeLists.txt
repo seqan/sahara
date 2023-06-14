@@ -27,6 +27,6 @@ if (${ROOT_PROJECT})
     add_executable(clice-demo src/clice-demo/main.cpp)
     target_link_libraries(clice-demo
                             clice::clice
-                            fmt)
+                            fmt::fmt)
     add_test(clice-demo clice-demo)
 endif()

@@ -31,5 +31,5 @@ int main(int argc, char** argv) {
 ```
 
 # Bash/Zsh completion
-Just run `source ./share/bash_completion ./build/clice-demo` and enjoy the
-tab-completion when running `./build/clice-demo` programs.
+Just run `eval "$(CLICE_GENERATE_COMPLETION=$$ ./clice-demo)"` and enjoy
+tab-completion when running `./clice-demo` programs.

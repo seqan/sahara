@@ -60,7 +60,7 @@ R"(function clice_GetOpts ()
     fi
 })", argv0);
     } else if (gen == std::string{"zsh"}) {
-        fmt::print("{}\ncompdef clice_GetOpts -P $(basename {}) -N",
+        fmt::print("{}\ncompdef clice_GetOpts -P $(basename {}) -N\nunset '_comps[{}]'\n",
 R"abc(clice_GetOpts () {
     completions=$(CLICE_COMPLETION= ${(@q)words[@]:0:$CURRENT})
     completions=(${(@f)completions})
@@ -75,7 +75,7 @@ R"abc(clice_GetOpts () {
     else
         compadd ${completions[@]}
     fi
-})abc", argv0);
+})abc", argv0, argv0);
     } else {
         fmt::print("unknown generator for shell '{}'\n", gen);
         exit(1);
