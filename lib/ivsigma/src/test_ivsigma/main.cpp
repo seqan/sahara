@@ -331,11 +331,103 @@ void test_qualities() {
     //!TODO
 }
 
+void test_compact_encoding() {
+    auto v = std::vector<uint8_t>{3, 2, 0, 1, 4, 3, 2};
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::compact_encoding<ivs::dna5>{v, /*.k=*/ 3}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] ==  80);
+        assert(result[1] ==  51);
+        assert(result[2] ==   9);
+        assert(result[3] ==  22);
+        assert(result[4] ==  29);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::compact_encoding<ivs::aa10li>{v, /*.k=*/ 3}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] == 320);
+        assert(result[1] == 201);
+        assert(result[2] ==  14);
+        assert(result[3] == 143);
+        assert(result[4] == 432);
+    }
+}
+
+void test_winnowing_minimizer() {
+    auto v = std::vector<uint8_t>{3, 2, 0, 1, 4, 3, 2};
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna5>{v, /*.k=*/ 3, /*.window=*/ 1}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] ==  80);
+        assert(result[1] ==  51);
+        assert(result[2] ==   9);
+        assert(result[3] ==  22);
+        assert(result[4] ==  29);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::aa10li>{v, /*.k=*/ 3, /*.window=*/ 1}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] == 320);
+        assert(result[1] == 201);
+        assert(result[2] ==  14);
+        assert(result[3] == 143);
+        assert(result[4] == 432);
+    }
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna5>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 3);
+        assert(result[0] ==  51);
+        assert(result[1] ==   9);
+        assert(result[2] ==  22);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::aa10li>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 3);
+        assert(result[0] == 201);
+        assert(result[1] ==  14);
+        assert(result[2] == 143);
+    }
+}
 
 int main() {
     test_nucliotides();
     test_aminoacids();
     test_qualities();
+    test_compact_encoding();
+    test_winnowing_minimizer();
     using namespace std::literals;
     assert(ivs::verify_char("ACGT"s) == true);
     assert(ivs::verify_char("ACG\0T"s) == false);
@@ -349,12 +441,14 @@ int main() {
             input[3] = 'A';
         }
         auto output = ivs::convert_char_to_rank<ivs::dna5>(input);
-        fmt::print("{} => {}\n", input, output);
+        auto s = fmt::format("{} => {}", input, output);
+        assert(s == "ACGnACGt => [0, 1, 2, 4, 0, 1, 2, 3]");
     }
     // using view to convert string to ranks
-/*    {
+    {
         auto input  = std::string{"ACGTACGT"};
-        auto output = input | ivs::view_char_as_rank<ivs::dna4>;
-        fmt::print("{} => {}\n", input, output);
-    }*/
+        auto output = input | ivs::view_char_to_rank<ivs::dna4>;
+        auto s = fmt::format("{} => {}", input, output);
+        assert(s == "ACGTACGT => [0, 1, 2, 3, 0, 1, 2, 3]");
+    }
 }

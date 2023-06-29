@@ -5,6 +5,8 @@
 // shipped with this file.
 // -----------------------------------------------------------------------------------------------------
 #include "aminoacids.h"
+#include "compact_encoding.h"
 #include "nucliotides.h"
 #include "qualities.h"
 #include "utility.h"
+#include "winnowing_minimizer.h"

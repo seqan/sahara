@@ -93,6 +93,14 @@ public:
         auto index = static_cast<uint8_t>(c);
         return normalize_char_table[index];
     }
+
+    /*! \brief Returns size of the alphabet
+     *
+     * \return a size_t representing the size of the alphabet
+     */
+    static constexpr auto size() noexcept -> size_t {
+        return sizeof...(values);
+    }
 };
 
 
@@ -183,6 +191,14 @@ public:
      */
     static constexpr auto rank_to_char(uint8_t v) noexcept -> char {
         return rank_to_char_table[v];
+    }
+
+    /*! \brief Returns size of the alphabet
+     *
+     * \return a size_t representing the size of the alphabet
+     */
+    static constexpr auto size() noexcept -> size_t {
+        return sizeof...(values);
     }
 
     /*! \brief computes complement based on ranks
