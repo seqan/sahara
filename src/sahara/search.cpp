@@ -78,7 +78,7 @@ auto cliMaxHits   = clice::Argument{ .parent = &cli,
 };
 
 void app() {
-    constexpr size_t Sigma = 5;
+    constexpr size_t Sigma = ivs::d_dna5::size();
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
 

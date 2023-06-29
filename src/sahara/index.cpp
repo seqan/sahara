@@ -15,8 +15,7 @@ auto cli = clice::Argument{ .arg    = "index",
 };
 
 void app() {
-    constexpr size_t Sigma = 5;
-
+    constexpr size_t Sigma = ivs::d_dna5::size();
 
     fmt::print("constructing an index for {}\n", *cli);
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
