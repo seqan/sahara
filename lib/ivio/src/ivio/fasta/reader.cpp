@@ -79,7 +79,9 @@ auto reader::next() -> std::optional<record_view> {
             auto s1 = s2;
             s2 = ureader.readUntil('\n', s1);
             s += ureader.string_view(s1, s2);
-            s2 += 1;
+            if (!ureader.eof(s2)) {
+                s2 += 1;
+            }
         } while (!ureader.eof(s2) and ureader.string_view(s2, s2+1)[0] != '>');
         lastUsed = s2;
     }
