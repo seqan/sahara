@@ -35,8 +35,8 @@ void app() {
     for (auto record : ivio::fasta::reader {{*cli}}) {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
-        if (!ivs::verify_rank(ref.back())) {
-            throw error_fmt{"reference '{}' ({}) has invalid characters", record.id, ref.size()};
+        if (auto pos = ivs::verify_rank(ref.back()); pos) {
+            throw error_fmt{"ref '{}' ({}) has invalid character '{}' (0x{:02x}) at position {}", record.id, ref.size(), record.seq[*pos], record.seq[*pos], *pos};
         }
     }
     if (ref.empty()) {

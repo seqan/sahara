@@ -52,13 +52,17 @@ void app() {
     for (auto record : reader) {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
+        if (auto pos = ivs::verify_rank(ref.back()); pos) {
+            throw error_fmt{"ref '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, ref.size(), *pos, record.seq[*pos], record.seq[*pos]};
+        }
+
 
         ref_kmer.emplace_back();
         for (auto v : ivs::winnowing_minimizer<Alphabet>(ref.back(), /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
             if (auto iter = uniq.find(v); iter != uniq.end()) {
                 ref_kmer.back().emplace_back(iter->second);
             } else {
-                if (uniq.size() >= KmerSigma) throw std::runtime_error{fmt::format("to many different kmers {} >= KmerSigma, doesn't fit into OccTable", uniq.size(), KmerSigma)};
+                if (uniq.size() >= KmerSigma) throw error_fmt{"to many different kmers {} >= KmerSigma, doesn't fit into OccTable", uniq.size(), KmerSigma};
                 uniq[v] = uniq.size()+1;
                 ref_kmer.back().emplace_back(uniq[v]);
             }

@@ -94,8 +94,8 @@ void app() {
     for (auto record : ivio::fasta::reader {{*cliQuery}}) {
         totalSize += record.seq.size();
         queries.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
-        if (!ivs::verify_rank(queries.back())) {
-            throw error_fmt{"query '{}' ({}) has invalid characters", record.id, queries.size()};
+        if (auto pos = ivs::verify_rank(queries.back()); pos) {
+            throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, queries.size(), *pos, record.seq[*pos], record.seq[*pos]};
         }
         if (!cliNoReverse) {
             queries.emplace_back(ivs::reverse_complement_rank<Alphabet>(queries.back()));

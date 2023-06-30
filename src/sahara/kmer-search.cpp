@@ -140,8 +140,8 @@ void app() {
     for (auto record : reader) {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
-        if (!ivs::verify_rank(ref.back())) {
-            throw std::runtime_error{"something went wrong"};
+        if (auto pos = ivs::verify_rank(ref.back()); pos) {
+            throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, ref.size(), *pos, record.seq[*pos], record.seq[*pos]};
         }
 
         [&]() {
