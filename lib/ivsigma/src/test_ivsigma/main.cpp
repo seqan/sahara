@@ -237,19 +237,19 @@ static void check_reverse_complement_rank(std::vector<uint8_t> input, std::vecto
 
 
 void test_nucliotides() {
-    check_normalize<ivs::dna4>("AaCcGgTt", "AACCGGTT");
-    check_normalize<ivs::dna5>("AaCcGgTtNn", "AACCGGTTNN");
-    check_normalize<ivs::rna4>("AaCcGgUu", "AACCGGUU");
-    check_normalize<ivs::rna5>("AaCcGgUuNn", "AACCGGUUNN");
+    check_normalize<ivs::dna4>("AaCcGgTtUu", "AACCGGTTTT");
+    check_normalize<ivs::dna5>("AaCcGgTtUuNn", "AACCGGTTTTNN");
+    check_normalize<ivs::rna4>("AaCcGgUuTt", "AACCGGUUUU");
+    check_normalize<ivs::rna5>("AaCcGgUuTtNn", "AACCGGUUUUNN");
     check_normalize<ivs::iupac>("AaCcGgTtNnRrYySsWwKkMmBbDdHhVv-.Uu", "AACCGGTTNNRRYYSSWWKKMMBBDDHHVV--TT");
-    check_normalize<ivs::dna3bs>("AaCcGgTt", "AATTGGTT");
+    check_normalize<ivs::dna3bs>("AaCcGgTtUu", "AATTGGTTTT");
 
-    check_char_to_rank<ivs::dna4>("AaCcGgTt", {0, 0, 1, 1, 2, 2, 3, 3});
-    check_char_to_rank<ivs::dna5>("AaCcGgTtNn", {0, 0, 1, 1, 2, 2, 3, 3, 4, 4});
-    check_char_to_rank<ivs::rna4>("AaCcGgUu", {0, 0, 1, 1, 2, 2, 3, 3});
-    check_char_to_rank<ivs::rna5>("AaCcGgUuNn", {0, 0, 1, 1, 2, 2, 3, 3, 4, 4});
+    check_char_to_rank<ivs::dna4>("AaCcGgTtUu", {0, 0, 1, 1, 2, 2, 3, 3, 3, 3});
+    check_char_to_rank<ivs::dna5>("AaCcGgTtUuNn", {0, 0, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4});
+    check_char_to_rank<ivs::rna4>("AaCcGgUuTt", {0, 0, 1, 1, 2, 2, 3, 3, 3, 3});
+    check_char_to_rank<ivs::rna5>("AaCcGgUuTtNn", {0, 0, 1, 1, 2, 2, 3, 3, 3, 3, 4, 4});
     check_char_to_rank<ivs::iupac>("AaCcGgTtNnRrYySsWwKkMmBbDdHhVv-.Uu", {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 3, 3});
-    check_char_to_rank<ivs::dna3bs>("AaGgTtCc", {0, 0, 1, 1, 2, 2, 2, 2});
+    check_char_to_rank<ivs::dna3bs>("AaGgTtCcUu", {0, 0, 1, 1, 2, 2, 2, 2, 2, 2});
 
 
     check_rank_to_char<ivs::dna4>( {0, 1, 2, 3}, "ACGT");
@@ -259,10 +259,10 @@ void test_nucliotides() {
     check_rank_to_char<ivs::iupac>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}, "ACGTNRYSWKMBDHV-");
     check_rank_to_char<ivs::dna3bs>( {0, 1, 2}, "AGT");
 
-    check_complement_char<ivs::dna4>("AaCcGgTt", "TTGGCCAA");
-    check_complement_char<ivs::dna5>("AaCcGgTtNn", "TTGGCCAANN");
-    check_complement_char<ivs::rna4>("AaCcGgUu", "UUGGCCAA");
-    check_complement_char<ivs::rna5>("AaCcGgUuNn", "UUGGCCAANN");
+    check_complement_char<ivs::dna4>("AaCcGgTtUu", "TTGGCCAAAA");
+    check_complement_char<ivs::dna5>("AaCcGgTtUuNn", "TTGGCCAAAANN");
+    check_complement_char<ivs::rna4>("AaCcGgUuTt", "UUGGCCAAAA");
+    check_complement_char<ivs::rna5>("AaCcGgUuTtNn", "UUGGCCAAAANN");
     check_complement_char<ivs::iupac>("AaCcGgTtNnRrYySsWwKkMmBbDdHhVv-.Uu", "TTGGCCAANNYYRRSSWWMMKKVVHHDDBB--AA");
 
     check_complement_rank<ivs::dna4>({0, 1, 2, 3}, {3, 2, 1, 0});
@@ -271,10 +271,10 @@ void test_nucliotides() {
     check_complement_rank<ivs::rna5>({0, 1, 2, 3, 4}, {3, 2, 1, 0, 4});
     check_complement_rank<ivs::iupac>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}, {3, 2, 1, 0, 4, 6, 5, 7, 8, 10, 9, 14, 13, 12, 11, 15});
 
-    check_reverse_complement_char<ivs::dna4>("AaCcGgTt", "AACCGGTT");
-    check_reverse_complement_char<ivs::dna5>("AaCcGgTtNn", "NNAACCGGTT");
-    check_reverse_complement_char<ivs::rna4>("AaCcGgUu", "AACCGGUU");
-    check_reverse_complement_char<ivs::rna5>("AaCcGgUuNn", "NNAACCGGUU");
+    check_reverse_complement_char<ivs::dna4>("AaCcGgTtUu", "AAAACCGGTT");
+    check_reverse_complement_char<ivs::dna5>("AaCcGgTtUuNn", "NNAAAACCGGTT");
+    check_reverse_complement_char<ivs::rna4>("AaCcGgUuTt", "AAAACCGGUU");
+    check_reverse_complement_char<ivs::rna5>("AaCcGgUuTtNn", "NNAAAACCGGUU");
     check_reverse_complement_char<ivs::iupac>("AaCcGgTtNnRrYySsWwKkMmBbDdHhVv-.Uu", "AA--BBDDHHVVKKMMWWSSRRYYNNAACCGGTT");
 
     check_reverse_complement_rank<ivs::dna4>({0, 1, 2, 3}, {0, 1, 2, 3});
@@ -331,16 +331,108 @@ void test_qualities() {
     //!TODO
 }
 
+void test_compact_encoding() {
+    auto v = std::vector<uint8_t>{3, 2, 0, 1, 4, 3, 2};
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::compact_encoding<ivs::dna5>{v, /*.k=*/ 3}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] ==  80);
+        assert(result[1] ==  51);
+        assert(result[2] ==   9);
+        assert(result[3] ==  22);
+        assert(result[4] ==  29);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::compact_encoding<ivs::aa10li>{v, /*.k=*/ 3}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] == 320);
+        assert(result[1] == 201);
+        assert(result[2] ==  14);
+        assert(result[3] == 143);
+        assert(result[4] == 432);
+    }
+}
+
+void test_winnowing_minimizer() {
+    auto v = std::vector<uint8_t>{3, 2, 0, 1, 4, 3, 2};
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna5>{v, /*.k=*/ 3, /*.window=*/ 1}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] ==  80);
+        assert(result[1] ==  51);
+        assert(result[2] ==   9);
+        assert(result[3] ==  22);
+        assert(result[4] ==  29);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::aa10li>{v, /*.k=*/ 3, /*.window=*/ 1}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 5);
+        assert(result[0] == 320);
+        assert(result[1] == 201);
+        assert(result[2] ==  14);
+        assert(result[3] == 143);
+        assert(result[4] == 432);
+    }
+
+    {
+        // attention: dna5 has a reverse complement, so the canonical kmers are being taken
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna5>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 3);
+        assert(result[0] ==  51);
+        assert(result[1] ==   9);
+        assert(result[2] ==  22);
+    }
+
+    {
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::aa10li>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 3);
+        assert(result[0] == 201);
+        assert(result[1] ==  14);
+        assert(result[2] == 143);
+    }
+}
 
 int main() {
     test_nucliotides();
     test_aminoacids();
     test_qualities();
+    test_compact_encoding();
+    test_winnowing_minimizer();
     using namespace std::literals;
-    assert(ivs::verify_char("ACGT"s) == true);
-    assert(ivs::verify_char("ACG\0T"s) == false);
-    assert(ivs::verify_rank(std::vector<uint8_t>{0, 1, 2, 3, 128, 254}) == true);
-    assert(ivs::verify_rank(std::vector<uint8_t>{0, 1, 2, 3, 255, 128, 254}) == false);
+    assert(!ivs::verify_char("ACGT"s));
+    assert(ivs::verify_char("ACG\0T"s).value() == 3);
+    assert(!ivs::verify_rank(std::vector<uint8_t>{0, 1, 2, 3, 128, 254}));
+    assert(ivs::verify_rank(std::vector<uint8_t>{0, 1, 2, 3, 255, 128, 254}).value() == 4);
 
     // using convert function to convert string to ranks
     {
@@ -349,12 +441,14 @@ int main() {
             input[3] = 'A';
         }
         auto output = ivs::convert_char_to_rank<ivs::dna5>(input);
-        fmt::print("{} => {}\n", input, output);
+        auto s = fmt::format("{} => {}", input, output);
+        assert(s == "ACGnACGt => [0, 1, 2, 4, 0, 1, 2, 3]");
     }
     // using view to convert string to ranks
-/*    {
+    {
         auto input  = std::string{"ACGTACGT"};
-        auto output = input | ivs::view_char_as_rank<ivs::dna4>;
-        fmt::print("{} => {}\n", input, output);
-    }*/
+        auto output = input | ivs::view_char_to_rank<ivs::dna4>;
+        auto s = fmt::format("{} => {}", input, output);
+        assert(s == "ACGTACGT => [0, 1, 2, 3, 0, 1, 2, 3]");
+    }
 }

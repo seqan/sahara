@@ -75,7 +75,7 @@ struct bcf_buffer {
     auto readIntOfType() -> T {
         static_assert(std::same_as<int8_t, T> or std::same_as<int16_t, T> or std::same_as<int32_t, T>
                       or std::same_as<uint8_t, T> or std::same_as<uint16_t, T> or std::same_as<uint32_t, T>,
-                      "Can only read (usigned) ints of 8, 16 and 32 bit length");
+                      "Can only read (unsigned) ints of 8, 16 and 32 bit length");
         auto value = ivio::bgzfUnpack<T>(iter);
         iter += sizeof(T);
         return value;
@@ -277,7 +277,7 @@ struct reader_base<bcf::reader>::pimpl {
         auto flen = l_shared + l_indiv + 8;
         std::tie(ptr, size) = ureader.read(flen);
         if (size < flen) throw std::runtime_error{"something went wrong reading bcf file (3)"};
-        if (size < 32+3) throw std::runtime_error{"something went worng reading bcf file (4)"};
+        if (size < 32+3) throw std::runtime_error{"something went wrong reading bcf file (4)"};
 
         auto buffer = bcf_buffer{ptr+8, ptr+flen};
 

@@ -6,8 +6,9 @@
 // -----------------------------------------------------------------------------------------------------
 #pragma once
 
-#include <cstdint>
 #include <concepts>
+#include <cstddef>
+#include <cstdint>
 
 namespace ivs {
 
@@ -16,6 +17,7 @@ concept alphabet_c = requires(Alphabet) {
     { Alphabet::char_to_rank(char{}) } -> std::same_as<uint8_t>;
     { Alphabet::rank_to_char(uint8_t{}) } -> std::same_as<char>;
     { Alphabet::normalize_char(char{}) } -> std::same_as<char>;
+    { Alphabet::size() } -> std::same_as<size_t>;
 };
 
 template <typename Alphabet>
@@ -23,6 +25,7 @@ concept alphabet_with_complement_c = requires(Alphabet) {
     { Alphabet::char_to_rank(char{}) } -> std::same_as<uint8_t>;
     { Alphabet::rank_to_char(uint8_t{}) } -> std::same_as<char>;
     { Alphabet::normalize_char(char{}) } -> std::same_as<char>;
+    { Alphabet::size() } -> std::same_as<size_t>;
     { Alphabet::complement_rank(uint8_t{}) } -> std::same_as<uint8_t>;
     { Alphabet::complement_char(char{}) } -> std::same_as<char>;
 };

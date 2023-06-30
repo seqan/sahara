@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 #include <stdexcept>
 
 struct error_fmt : std::exception {

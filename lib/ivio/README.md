@@ -10,7 +10,7 @@ See [documentation](https://sgssgene.github.io/IVio/) for detailed information.
 To use this package with cmake you must add this repository via `find_package` and add a `target_link_libraries`.
 e.g:
 ```cmake
-find_package(ivio HINTS lib/IVio)
+find_package(ivio PATHS lib/IVio)
 add_executable(your_exec file1.cpp)
 target_link_libraries(your_exec PUBLIC ivio::ivio)
 ```

@@ -81,6 +81,14 @@ public:
         auto index = static_cast<uint8_t>(c);
         return normalize_char_table[index];
     }
+
+    /*! \brief Returns size of the alphabet
+     *
+     * \return a size_t representing the size of the alphabet
+     */
+    static constexpr auto size() noexcept -> size_t {
+        return Alphabet::size()+1;
+    }
 };
 
 template <alphabet_with_complement_c Alphabet>
@@ -102,6 +110,7 @@ public:
     using Parent::rank_to_char;
     using Parent::char_to_rank;
     using Parent::normalize_char;
+    using Parent::size;
 
     /*! \brief computes complement based on ranks
      *

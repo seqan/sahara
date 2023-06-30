@@ -2,7 +2,7 @@
 
 A c++20 library for **bioinformatics**. It provides functionality to work
 on **nucleotide** alphabets (e.g. `dna4`, `dna5`, `rna4`, ...), **amino acid**
-based alphabets and many more.
+based alphabets and many more. The development is happening on [github](https://github.com/SGSSGene/IVSigma).
 
 ## Basic concepts
 
@@ -24,7 +24,7 @@ Easiest way to use this repository is to clone this as a subrepo into your proje
 `lib/IVSigma`, and then edit your `CMakeLists.txt`:
 
 ```cmake
-add_subdirectory(lib/IVSigma)
+find_package(ivsigma REQUIRED PATHS lib/ivsigma)
 
 # ...
 target_link_library(your_project ivsigma::ivsigma)

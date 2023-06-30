@@ -1,9 +1,14 @@
-#include "utils.h"
+#include "utils/StopWatch.h"
+#include "utils/error_fmt.h"
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/array.hpp>
+#include <cereal/types/vector.hpp>
 #include <clice/clice.h>
+#include <fmindex-collection/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
-#include <fmt/format.h>
-#include <fmt/std.h>
+#include <ivio/ivio.h>
+#include <ivsigma/ivsigma.h>
 #include <string>
 
 namespace {
@@ -15,8 +20,8 @@ auto cli = clice::Argument{ .arg    = "index",
 };
 
 void app() {
-    constexpr size_t Sigma = 5;
-
+    using Alphabet = ivs::d_dna5;
+    constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
@@ -25,9 +30,19 @@ void app() {
     auto stopWatch = StopWatch();
 
     // load fasta file
-    auto [ref, refInfo] = loadQueries<Table::Sigma>(*cli, /*reverse*/false);
     size_t totalSize{};
-    for (auto const& r : ref) totalSize += r.size();
+    auto ref = std::vector<std::vector<uint8_t>>{};
+    for (auto record : ivio::fasta::reader {{*cli}}) {
+        totalSize += record.seq.size();
+        ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
+        if (auto pos = ivs::verify_rank(ref.back()); pos) {
+            throw error_fmt{"ref '{}' ({}) has invalid character '{}' (0x{:02x}) at position {}", record.id, ref.size(), record.seq[*pos], record.seq[*pos], *pos};
+        }
+    }
+    if (ref.empty()) {
+        throw error_fmt{"reference file {} was empty - abort\n", *cli};
+    }
+
 
     fmt::print("config:\n");
     fmt::print("  file: {}\n", *cli);
