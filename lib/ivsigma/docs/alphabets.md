@@ -18,7 +18,8 @@ The following alphabets are available
 
 
 ## Nucleotide based
-Alphabets starting with `d_` are alphabets with a additional delimiter '$' as rank 0.
+Alphabets starting with `d_` are alphabets with a additional delimiter `$` as rank 0.
+- `#!cpp size_t size()`
 - `#!cpp uint8_t char_to_rank(char)`
 - `#!cpp char rank_to_char(uint8_t)`
 - `#!cpp char normalize_char(char)`
@@ -27,8 +28,8 @@ Alphabets starting with `d_` are alphabets with a additional delimiter '$' as ra
 
 All functions are guaranteed to not throw.
 
-
 ## Amino acid based
+- `#!cpp size_t size()`
 - `#!cpp uint8_t char_to_rank(char)`
 - `#!cpp char rank_to_char(uint8_t)`
 - `#!cpp char normalize_char(char)`
@@ -36,6 +37,7 @@ All functions are guaranteed to not throw.
 All functions are guaranteed to not throw.
 
 ## Quality based
+- `#!cpp size_t size()`
 - `#!cpp uint8_t char_to_rank(char)`
 - `#!cpp char rank_to_char(uint8_t)`
 - `#!cpp char normalize_char(char)`

@@ -12,8 +12,8 @@ struct winnowing_minimizer {
     compact_encoding<Alphabet> hash;
     size_t                     window{};
 
-    winnowing_minimizer(std::span<uint8_t const> _values, size_t _k, size_t _window)
-        : hash{_values, _k}
+    winnowing_minimizer(std::span<uint8_t const> _values, size_t _k, size_t _window, size_t _seed = 0)
+        : hash{_values, _k, _seed}
         , window{_window} {
     }
     auto size() const -> size_t {

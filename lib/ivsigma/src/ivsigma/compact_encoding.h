@@ -53,10 +53,12 @@ template <alphabet_c Alphabet>
 struct compact_encoding {
     std::span<uint8_t const> values;
     size_t const k;
+    size_t const seed;
 
-   compact_encoding(std::span<uint8_t const> _values, size_t _k)
+   compact_encoding(std::span<uint8_t const> _values, size_t _k, size_t _seed = 0)
         : values{_values}
         , k{_k}
+        , seed{_seed}
     {}
 
     auto size() const -> size_t {
@@ -88,9 +90,9 @@ struct compact_encoding {
             }
             pos = ptr->k;
             if constexpr (alphabet_with_complement_c<Alphabet>) {
-                minHash = std::min(fwdHash.value(), bwdHash.value());
+                minHash = std::min(fwdHash.value() ^ ptr->seed, bwdHash.value() ^ ptr->seed);
             } else {
-                minHash = fwdHash.value();
+                minHash = fwdHash.value() ^ ptr->seed;
             }
         }
         auto operator*() const -> size_t {
@@ -102,9 +104,9 @@ struct compact_encoding {
             fwdHash.nextRight(rmValue, addValue);
             if constexpr (alphabet_with_complement_c<Alphabet>) {
                 bwdHash.nextLeft(Alphabet::complement_rank(rmValue), Alphabet::complement_rank(addValue));
-                minHash = std::min(fwdHash.value(), bwdHash.value());
+                minHash = std::min(fwdHash.value() ^ ptr->seed, bwdHash.value() ^ ptr->seed);
             } else {
-                minHash = fwdHash.value();
+                minHash = fwdHash.value() ^ ptr->seed;
             }
             pos += 1;
             return *this;

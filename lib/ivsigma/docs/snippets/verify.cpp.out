@@ -1,0 +1,4 @@
+no error in 'ACGT'
+error, unexpected char 0 at position 2
+no error
+error, unexpected rank 255 at position 4
