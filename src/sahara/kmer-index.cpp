@@ -51,11 +51,10 @@ void app() {
     auto uniq = std::unordered_map<size_t, uint32_t>{};
     for (auto record : reader) {
         totalSize += record.seq.size();
-        ref.emplace_back(ivs::convert_char_to_rank<ivs::d_dna5>(record.seq));
-        auto seq = ivs::convert_char_to_rank<ivs::dna5>(record.seq);
+        ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
 
         ref_kmer.emplace_back();
-        for (auto v : ivs::winnowing_minimizer<ivs::dna5>(seq, /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
+        for (auto v : ivs::winnowing_minimizer<Alphabet>(ref.back(), /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
             if (auto iter = uniq.find(v); iter != uniq.end()) {
                 ref_kmer.back().emplace_back(iter->second);
             } else {

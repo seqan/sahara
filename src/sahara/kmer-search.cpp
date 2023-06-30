@@ -139,15 +139,14 @@ void app() {
     size_t longestKmer{};
     for (auto record : reader) {
         totalSize += record.seq.size();
-        ref.emplace_back(ivs::convert_char_to_rank<ivs::d_dna5>(record.seq));
-        auto seq = ivs::convert_char_to_rank<ivs::dna5>(record.seq);
-        if (!ivs::verify_rank(seq)) {
+        ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
+        if (!ivs::verify_rank(ref.back())) {
             throw std::runtime_error{"something went wrong"};
         }
 
         [&]() {
             ref_kmer.emplace_back();
-            for (auto v : ivs::winnowing_minimizer<ivs::dna5>(seq, /*.k=*/kmer, /*.window=*/window)) {
+            for (auto v : ivs::winnowing_minimizer<Alphabet>(ref.back(), /*.k=*/kmer, /*.window=*/window)) {
                 if (auto iter = uniq.find(v); iter != uniq.end()) {
                     ref_kmer.back().emplace_back(iter->second);
                 } else {
@@ -161,7 +160,7 @@ void app() {
             kmerLen += ref_kmer.back().size();
 
             if (!cliNoReverse) {
-                ref.emplace_back(ivs::reverse_complement_rank<ivs::d_dna5>(ref.back()));
+                ref.emplace_back(ivs::reverse_complement_rank<Alphabet>(ref.back()));
                 ref_kmer.emplace_back(ref_kmer.back());
                 std::ranges::reverse(ref_kmer.back());
             }
