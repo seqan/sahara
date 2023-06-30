@@ -1,18 +1,21 @@
 #include "error_fmt.h"
-#include "utils.h"
+#include "utils/StopWatch.h"
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
+#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
-#include <fmt/format.h>
-#include <fmt/std.h>
 #include <fstream>
+#include <ivio/ivio.h>
+#include <ivsigma/ivsigma.h>
 #include <search_schemes/expand.h>
 #include <search_schemes/generator/all.h>
 #include <search_schemes/nodeCount.h>
+#include <string>
 #include <unordered_set>
 
 using namespace fmindex_collection;
@@ -85,7 +88,19 @@ void app() {
 
     auto stopWatch = StopWatch();
 
-    auto const [queries, queryInfos] = loadQueries<Alphabet>(*cliQuery, !cliNoReverse);
+    // load fasta file
+    size_t totalSize{};
+    auto queries = std::vector<std::vector<uint8_t>>{};
+    for (auto record : ivio::fasta::reader {{*cliQuery}}) {
+        totalSize += record.seq.size();
+        queries.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
+        if (!ivs::verify_rank(queries.back())) {
+            throw error_fmt{"query '{}' ({}) has invalid characters", record.id, queries.size()};
+        }
+        if (!cliNoReverse) {
+            queries.emplace_back(ivs::reverse_complement_rank<Alphabet>(queries.back()));
+        }
+    }
     if (queries.empty()) {
         throw error_fmt{"query file {} was empty - abort\n", *cliQuery};
     }

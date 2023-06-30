@@ -1,16 +1,19 @@
 #include "error_fmt.h"
-#include "utils.h"
+#include "utils/StopWatch.h"
 
 #include <cereal/archives/binary.hpp>
-#include "cereal/types/unordered_map.hpp"
 #include <cereal/types/array.hpp>
+#include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
+#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
+#include <fmindex-collection/occtable/all.h>
 #include <fmindex-collection/search/all.h>
-#include <fmt/format.h>
-#include <fmt/std.h>
 #include <fstream>
+#include <ivio/ivio.h>
+#include <ivsigma/ivsigma.h>
 #include <search_schemes/expand.h>
 #include <search_schemes/generator/all.h>
 #include <search_schemes/nodeCount.h>
