@@ -15,7 +15,8 @@ auto cli = clice::Argument{ .arg    = "index",
 };
 
 void app() {
-    constexpr size_t Sigma = ivs::d_dna5::size();
+    using Alphabet = ivs::d_dna5;
+    constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
@@ -24,7 +25,7 @@ void app() {
     auto stopWatch = StopWatch();
 
     // load fasta file
-    auto [ref, refInfo] = loadQueries<Table::Sigma>(*cli, /*reverse*/false);
+    auto [ref, refInfo] = loadQueries<Alphabet>(*cli, /*reverse*/false);
     size_t totalSize{};
     for (auto const& r : ref) totalSize += r.size();
 

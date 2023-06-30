@@ -8,6 +8,8 @@ cmake_minimum_required (VERSION 3.14)
 
 add_executable(sahara
     index.cpp
+    kmer-index.cpp
+    kmer-search.cpp
     search.cpp
     main.cpp
 )

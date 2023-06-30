@@ -22,29 +22,29 @@ struct Query {
         , reverse{_reverse}
         {}
 };
-template <size_t Sigma>
+template <ivs::alphabet_c Alphabet>
 auto loadQueries(std::filesystem::path path, bool reverse) {
-    std::vector<std::vector<uint8_t>> queries;
-    std::vector<Query> queryInfos;
+    auto queries = std::vector<std::vector<uint8_t>>{};
+    auto queryInfos = std::vector<Query>{};
     if (path.empty() || !std::filesystem::exists(path)) {
         return std::make_tuple(queries, queryInfos);
     }
     auto reader = ivio::fasta::reader {{path}};
     for (auto record : reader) {
-        queries.emplace_back(ivs::convert_char_to_rank<ivs::d_dna5>(record.seq));
+        queries.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
         if (reverse) {
-            queries.emplace_back(ivs::reverse_complement_rank<ivs::d_dna5>(queries.back()));
+            queries.emplace_back(ivs::reverse_complement_rank<Alphabet>(queries.back()));
         }
     }
     return std::make_tuple(queries, queryInfos);
 }
 
-template <typename CSA, typename Table>
+template <ivs::alphabet_c Alphabet, typename CSA, typename Table>
 auto loadIndex(std::string path, size_t samplingRate, size_t threadNbr) {
     auto sw = StopWatch{};
     auto indexPath = path + ".idx";
     if (!std::filesystem::exists(indexPath)) {
-        auto [ref, refInfo] = loadQueries<Table::Sigma>(path, false);
+        auto [ref, refInfo] = loadQueries<Alphabet>(path, false);
         auto index = fmindex_collection::BiFMIndex<Table>{ref, samplingRate, threadNbr};
         // save index here
         auto ofs     = std::ofstream{indexPath, std::ios::binary};
@@ -61,12 +61,12 @@ auto loadIndex(std::string path, size_t samplingRate, size_t threadNbr) {
     }
 }
 
-template <typename CSA, typename Table>
+template <ivs::alphabet_c Alphabet, typename CSA, typename Table>
 auto loadDenseIndex(std::string path, size_t samplingRate, size_t threadNbr) {
     auto sw = StopWatch{};
     auto indexPath = path + ".idx";
     if (!std::filesystem::exists(indexPath)) {
-        auto [ref, refInfo] = loadQueries<Table::Sigma>(path, false);
+        auto [ref, refInfo] = loadQueries<Alphabet>(path, false);
         auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, samplingRate, threadNbr};
         // save index here
         auto ofs     = std::ofstream{indexPath, std::ios::binary};
