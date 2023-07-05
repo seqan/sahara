@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:SGSSGene/IVSigma.git
 	branch = main
-	commit = 880cfddc59d2b1c8a91942f82053d9bd0953f6e9
-	parent = 8e324527d135295f89f53d864b38f113c4906883
+	commit = dc1d25833584978cf4f48c997f514b1d202fb7eb
+	parent = 1dd1bebb3552dbe170b82a4c5f25d03e6c1e4b2a
 	method = merge
 	cmdver = 0.4.6

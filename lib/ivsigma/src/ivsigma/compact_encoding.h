@@ -49,7 +49,7 @@ struct compact_encoding_gadget {
     }
 };
 
-template <alphabet_c Alphabet>
+template <alphabet_c Alphabet, bool UseCanonicalKmers>
 struct compact_encoding {
     std::span<uint8_t const> values;
     size_t const k;
@@ -89,7 +89,7 @@ struct compact_encoding {
                 }
             }
             pos = ptr->k;
-            if constexpr (alphabet_with_complement_c<Alphabet>) {
+            if constexpr (alphabet_with_complement_c<Alphabet> and UseCanonicalKmers) {
                 minHash = std::min(fwdHash.value() ^ ptr->seed, bwdHash.value() ^ ptr->seed);
             } else {
                 minHash = fwdHash.value() ^ ptr->seed;
@@ -102,7 +102,7 @@ struct compact_encoding {
             auto rmValue  = ptr->values[pos-ptr->k];
             auto addValue = ptr->values[pos];
             fwdHash.nextRight(rmValue, addValue);
-            if constexpr (alphabet_with_complement_c<Alphabet>) {
+            if constexpr (alphabet_with_complement_c<Alphabet> and UseCanonicalKmers) {
                 bwdHash.nextLeft(Alphabet::complement_rank(rmValue), Alphabet::complement_rank(addValue));
                 minHash = std::min(fwdHash.value() ^ ptr->seed, bwdHash.value() ^ ptr->seed);
             } else {
@@ -127,7 +127,7 @@ struct compact_encoding {
 
 namespace ivs {
 
-template <alphabet_c Alphabet>
-using compact_encoding = detail::compact_encoding<Alphabet>;
+template <alphabet_c Alphabet, bool UseCanonicalKmers=true>
+using compact_encoding = detail::compact_encoding<Alphabet, UseCanonicalKmers>;
 
 }

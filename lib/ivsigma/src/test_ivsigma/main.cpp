@@ -420,6 +420,34 @@ void test_winnowing_minimizer() {
         assert(result[1] ==  14);
         assert(result[2] == 143);
     }
+
+    // Test with many duplicates
+    {
+        auto v = std::vector<uint8_t>{3, 3, 3, 3, 3, 3};
+
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna4>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 3);
+        assert(result[0] == 0);
+        assert(result[1] == 0);
+        assert(result[2] == 0);
+    }
+    // Test with many duplicates, but skipping them
+    {
+        auto v = std::vector<uint8_t>{3, 3, 3, 3, 3, 3};
+
+        auto result = std::vector<size_t>{};
+        for (auto h : ivs::winnowing_minimizer<ivs::dna4, /*DuplicatesAllowed=*/ false>{v, /*.k=*/ 3, /*.window=*/ 2}) {
+            result.push_back(h);
+        }
+
+        assert(result.size() == 1);
+        assert(result[0] == 0);
+    }
+
 }
 
 int main() {
