@@ -124,7 +124,7 @@ void app() {
 
     {
         auto fwdQueries = queries.size() / (cliNoReverse?1:2);
-        auto bwdQueries = fwdQueries * (cliNoReverse?0:1);
+        auto bwdQueries = queries.size() - fwdQueries;
         fmt::print("fwd queries: {}\n"
                    "bwd queries: {}\n",
                    fwdQueries, bwdQueries);

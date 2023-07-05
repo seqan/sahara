@@ -84,7 +84,7 @@ auto cliMaxHits   = clice::Argument{ .parent = &cli,
 void app() {
     using Alphabet = ivs::d_dna5;
     constexpr size_t Sigma = Alphabet::size();
-    constexpr size_t KmerSigma = 256;
+    constexpr size_t KmerSigma = 128;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
 
@@ -146,7 +146,7 @@ void app() {
 
         [&]() {
             ref_kmer.emplace_back();
-            for (auto v : ivs::winnowing_minimizer<Alphabet>(ref.back(), /*.k=*/kmer, /*.window=*/window)) {
+            for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref.back(), /*.k=*/kmer, /*.window=*/window)) {
                 if (auto iter = uniq.find(v); iter != uniq.end()) {
                     ref_kmer.back().emplace_back(iter->second);
                 } else {
@@ -176,7 +176,7 @@ void app() {
 
     {
         auto fwdQueries = ref.size() / (cliNoReverse?1:2);
-        auto bwdQueries = fwdQueries * (cliNoReverse?0:1);
+        auto bwdQueries = ref.size() - fwdQueries;
         fmt::print("fwd queries: {}\n"
                    "bwd queries: {}\n",
                    fwdQueries, bwdQueries);

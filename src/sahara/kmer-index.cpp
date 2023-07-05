@@ -35,7 +35,7 @@ auto cliWindow = clice::Argument{ .parent = &cli,
 void app() {
     using Alphabet = ivs::d_dna5;
     constexpr size_t Sigma = Alphabet::size();
-    constexpr size_t KmerSigma = 256;
+    constexpr size_t KmerSigma = 128;
 
     fmt::print("constructing an index for {}\n", *cli);
 
@@ -58,7 +58,7 @@ void app() {
 
 
         ref_kmer.emplace_back();
-        for (auto v : ivs::winnowing_minimizer<Alphabet>(ref.back(), /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
+        for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref.back(), /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
             if (auto iter = uniq.find(v); iter != uniq.end()) {
                 ref_kmer.back().emplace_back(iter->second);
             } else {
