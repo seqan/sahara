@@ -47,8 +47,8 @@ void app() {
     size_t totalSize{};
     size_t kmerLen{};
     auto ref = std::vector<std::vector<uint8_t>>{};
-    auto ref_kmer = std::vector<std::vector<uint32_t>>{};
-    auto uniq = std::unordered_map<size_t, uint32_t>{};
+    auto ref_kmer = std::vector<std::vector<uint8_t>>{};
+    auto uniq = std::unordered_map<size_t, uint8_t>{};
     for (auto record : reader) {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
@@ -84,13 +84,13 @@ void app() {
     // create index
     //using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
     using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{std::move(ref), /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("index creation", stopWatch.reset());
 
     // create kmer-index
-    using KmerTable = fmindex_collection::occtable::interleavedEPRV7_32::OccTable<KmerSigma>;
-    auto kmerIndex = fmindex_collection::BiFMIndex_32<KmerTable, fmindex_collection::CSA_32>{ref_kmer, /*samplingRate*/65536, /*threadNbr*/1};
+    using KmerTable = fmindex_collection::occtable::interleavedEPRV7::OccTable<KmerSigma>;
+    auto kmerIndex = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{std::move(ref_kmer), /*samplingRate*/65536, /*threadNbr*/1};
 
     timing.emplace_back("kmer-index creation", stopWatch.reset());
 

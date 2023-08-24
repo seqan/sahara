@@ -109,18 +109,18 @@ void app() {
     // load index file
     //using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
     using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
-    using KmerTable = fmindex_collection::occtable::interleavedEPRV7_32::OccTable<KmerSigma>;
+    using KmerTable = fmindex_collection::occtable::interleavedEPRV7::OccTable<KmerSigma>;
 
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
-    auto kmerIndex = fmindex_collection::BiFMIndex_32<KmerTable, fmindex_collection::CSA_32>{fmindex_collection::cereal_tag{}};
+    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    auto kmerIndex = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
     size_t kmer{};
     size_t window{};
-    auto uniq = std::unordered_map<size_t, uint32_t>{};
+    auto uniq = std::unordered_map<size_t, uint8_t>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -229,63 +229,80 @@ void app() {
     };
 
 
-    auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
+    //auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, FMIndexCursor<decltype(index)>, size_t>>{};
+
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
-//    if (*cliSearchMode == SearchMode::All) {
-        auto search_schemes  = loadSearchScheme(0, k);
-        auto reordered_list  = search_ng21::prepare_reorder(search_schemes);
 
-        auto kmer_search_schemes_by_len = std::vector<decltype(search_schemes)>{};
-        auto kmer_reordered_list_by_len = std::vector<decltype(reordered_list)>{};
-        kmer_search_schemes_by_len.resize(longestKmer+1);
-        kmer_reordered_list_by_len.resize(longestKmer+1);
-        for (size_t i{smallestKmer}; i <= longestKmer; ++i){
-            kmer_search_schemes_by_len[i] = loadKmerSearchScheme(0, k, i);
-            kmer_reordered_list_by_len[i] = search_ng21::prepare_reorder(kmer_search_schemes_by_len[i]);
+    auto search_schemes  = loadSearchScheme(0, k);
+    auto reordered_list  = search_ng21::prepare_reorder(search_schemes);
+
+    auto kmer_search_schemes_by_len = std::vector<decltype(search_schemes)>{};
+    auto kmer_reordered_list_by_len = std::vector<decltype(reordered_list)>{};
+    kmer_search_schemes_by_len.resize(longestKmer+1);
+    kmer_reordered_list_by_len.resize(longestKmer+1);
+    for (size_t i{smallestKmer}; i <= longestKmer; ++i){
+        kmer_search_schemes_by_len[i] = loadKmerSearchScheme(0, k, i);
+        kmer_reordered_list_by_len[i] = search_ng21::prepare_reorder(kmer_search_schemes_by_len[i]);
+    }
+
+    timing.emplace_back("searchScheme", stopWatch.reset());
+
+    size_t totalKmerHits{};
+    #if 1
+    for (size_t qidx{0}; qidx < ref.size(); ++qidx) {
+        auto cursor = search_no_errors::search(kmerIndex, ref_kmer[qidx]);
+        if (!cursor.empty()) {
+            totalKmerHits += cursor.count();
+            #if 0
+            auto cursor2 = search_no_errors::search(index, ref[qidx]);
+            if (!cursor2.empty()) {
+                resultCursors.emplace_back(qidx, cursor2, /*errors*/0);
+            }
+            #endif
         }
+    }
+    #else
+    for (size_t qidx{0}; qidx < ref.size(); ++qidx) {
+        auto& kmer_search_schemes = kmer_search_schemes_by_len[ref_kmer[qidx].size()];
+        auto& kmer_reordered_list = kmer_reordered_list_by_len[ref_kmer[qidx].size()];
 
-        timing.emplace_back("searchScheme", stopWatch.reset());
-
-        size_t totalKmerHits{};
-        for (size_t qidx{0}; qidx < ref.size(); ++qidx) {
-            auto& kmer_search_schemes = kmer_search_schemes_by_len[ref_kmer[qidx].size()];
-            auto& kmer_reordered_list = kmer_reordered_list_by_len[ref_kmer[qidx].size()];
-
-            for (size_t i{0}; i < reordered_list.size(); ++i) {
-                auto& kmer_reordered     = kmer_reordered_list[i];
-                auto& kmer_search_scheme = kmer_search_schemes[i];
-                bool found{false};
-                auto& kmer_search = kmer_reordered;
-                #if 1
-                for (size_t k {0}; k < kmer_search.size(); ++k) {
-                    kmer_search[k].rank = ref_kmer[qidx][kmer_search_scheme.pi[k]];
-                    assert(kmer_search[k].rank != 0);
-                }
-                search_ng21::Search{kmerIndex, kmer_search, [&](auto cur, size_t e) {
-                    totalKmerHits += cur.count();
-                    found = true;
-                    return std::true_type{};
-                }}.run();
-                //continue;
-                #else
+        for (size_t i{0}; i < reordered_list.size(); ++i) {
+            auto& kmer_reordered     = kmer_reordered_list[i];
+            auto& kmer_search_scheme = kmer_search_schemes[i];
+            bool found{false};
+            auto& kmer_search = kmer_reordered;
+            #if 0
+            for (size_t k {0}; k < kmer_search.size(); ++k) {
+                kmer_search[k].rank = ref_kmer[qidx][kmer_search_scheme.pi[k]];
+                assert(kmer_search[k].rank != 0);
+            }
+            search_ng21::Search{kmerIndex, kmer_search, [&](auto cur, size_t e) {
+                totalKmerHits += cur.count();
                 found = true;
-                #endif
+                return std::true_type{};
+            }}.run();
+            //continue;
+            #else
+            found = true;
+            #endif
 
-                if (found) {
-                    auto& search        = reordered_list[i];
-                    auto& search_scheme = search_schemes[i];
-                    for (size_t k {0}; k < search.size(); ++k) {
-                        search[k].rank = ref[qidx][search_scheme.pi[k]];
-                    }
-                    search_ng21::Search{index, search, [&](auto cur, size_t e) {
-                        res_cb(qidx, cur, e);
-                        return std::false_type{};
-                    }}.run();
+            if (found) {
+                auto& search        = reordered_list[i];
+                auto& search_scheme = search_schemes[i];
+                for (size_t k {0}; k < search.size(); ++k) {
+                    search[k].rank = ref[qidx][search_scheme.pi[k]];
                 }
+                search_ng21::Search{index, search, [&](auto cur, size_t e) {
+                    res_cb(qidx, cur, e);
+                    return std::false_type{};
+                }}.run();
             }
         }
+    }
+    #endif
 
     timing.emplace_back("search", stopWatch.reset());
 
