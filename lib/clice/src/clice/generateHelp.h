@@ -7,7 +7,7 @@
 namespace clice {
 
 inline auto generatePartialSynopsis(ArgumentBase const& arg) -> std::string {
-    auto ret = fmt::format("[{}", arg.arg);
+    auto ret = fmt::format("[{}", fmt::join(arg.args, "|"));
     for (auto child : arg.arguments) {
         ret += " " + generatePartialSynopsis(*child);
     }
@@ -88,7 +88,7 @@ inline auto generateSplitSynopsis() -> std::string {
     auto ret = std::string{};
     auto bases = std::vector<ArgumentBase const*>{};
     for (auto const& arg : Register::getInstance().arguments) {
-        if (!arg->arg.empty() and arg->arg[0] != '-') {
+        if (!arg->args.empty() and arg->args[0][0] != '-') {
             bases.emplace_back(arg);
         } else {
             ret += " " + generatePartialSynopsis(*arg);
@@ -114,22 +114,41 @@ inline auto generateHelp() -> std::string {
     ret = generateSplitSynopsis() + "\n\n";
 
     auto& args = clice::Register::getInstance().arguments;
+
     auto f = std::function<void(std::vector<clice::ArgumentBase*>, std::string)>{};
+
+    // Find longest word (for correct indentation)
+    size_t longestWord{};
     f = [&](auto const& args, std::string ind) {
-        size_t longestWord = {};
         for (auto arg : args) {
-            longestWord = std::max(longestWord, arg->arg.size());
+            auto argstr = fmt::format("{}{}", ind, fmt::join(arg->args, ", "));
+            longestWord = std::max(longestWord, argstr.size());
         }
 
         for (auto arg : args) {
-            if (arg->arg.empty() or arg->arg[0] == '-') continue;
-            ret = ret + fmt::format("{}{:<{}} - {}\n", ind, arg->arg, longestWord, arg->desc);
-            f(arg->arguments, ind + "    ");
+            if (arg->args.empty() or arg->args[0][0] == '-') continue;
+            f(arg->arguments, ind + "  ");
         }
         for (auto arg : args) {
-            if (arg->arg.empty() or arg->arg[0] != '-') continue;
-            ret = ret + fmt::format("{}{:<{}}    - {}\n", ind, arg->arg, longestWord, arg->desc);
-            f(arg->arguments, ind + "    ");
+            if (arg->args.empty() or arg->args[0][0] != '-') continue;
+            f(arg->arguments, ind + "  ");
+        }
+    };
+    f(args, "");
+
+    f = [&](auto const& args, std::string ind) {
+
+        for (auto arg : args) {
+            if (arg->args.empty() or arg->args[0][0] == '-') continue;
+            auto argstr = fmt::format("{}", fmt::join(arg->args, ", "));
+            ret = ret + fmt::format("{}{:<{}} - {}\n", ind, argstr, longestWord - ind.size(), arg->desc);
+            f(arg->arguments, ind + "  ");
+        }
+        for (auto arg : args) {
+            if (arg->args.empty() or arg->args[0][0] != '-') continue;
+            auto argstr = fmt::format("{}", fmt::join(arg->args, ", "));
+            ret = ret + fmt::format("{}{:<{}} - {}\n", ind, argstr, longestWord - ind.size(), arg->desc);
+            f(arg->arguments, ind + "  ");
         }
     };
     f(args, "");

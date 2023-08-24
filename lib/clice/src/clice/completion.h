@@ -64,7 +64,7 @@ R"abc(clice_GetOpts () {
         EXT="$(echo "${completions}" | cut -d ' ' -f 3)"
         _files -g "*${EXT}"
     else
-        compadd ${completions[@]}
+        compadd -- "${completions[@]}"
     fi
 })abc", argv0);
     } else {

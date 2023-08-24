@@ -20,18 +20,20 @@ namespace clice {
 inline std::string argv0; // Parser will fill this
 
 struct ArgumentBase {
-    ArgumentBase* parent{};
-    std::string   arg;
-    std::string   desc;
+    ArgumentBase*            parent{};
+    std::vector<std::string> args;
+    std::string              desc;
     std::optional<std::vector<std::string>> mapping;
-    std::vector<std::string> tags;
+    std::vector<std::string>   tags;
     std::optional<std::string> completion;
     std::vector<ArgumentBase*> arguments; // child parameters
-    std::type_index type_index;
+    bool                       symlink;   // a symlink for example to "slix-env" should actually call "slix env"
+    std::type_index            type_index;
 
     std::function<void()> init;
     std::function<void(std::string_view)> fromString;
     std::function<void()> cb;
+    size_t                cb_priority;
 
     ArgumentBase() = delete;
     ArgumentBase(ArgumentBase* parent, std::type_index idx);
@@ -72,15 +74,29 @@ inline ArgumentBase::~ArgumentBase() {
     }
 }
 
+struct ListOfStrings : std::vector<std::string> {
+    ListOfStrings() {}
+    ListOfStrings(char const* str) {
+        emplace_back(str);
+    }
+    ListOfStrings(std::initializer_list<char const*> list) {
+        for (auto l : list) {
+            emplace_back(l);
+        }
+    }
+};
+
 template <typename T = nullptr_t, typename T2 = nullptr_t>
 struct Argument {
     Argument<T2>* parent{};
-    std::string arg;
+    ListOfStrings args;
+    bool          symlink;
     std::string desc;
     bool isSet{};
     T value{};
     mutable std::any anyType; // used if T is a callback
     std::function<void()> cb;
+    size_t                cb_priority{100}; // lower priorities will be triggered before larger ones
     std::optional<std::unordered_map<std::string, T>> mapping;
     std::vector<std::string> tags;
 
@@ -94,7 +110,7 @@ struct Argument {
             if (!anyType.has_value()) {
                 anyType = value();
             }
-            return std::any_cast<R>(anyType);
+            return *std::any_cast<R>(&anyType);
         } else if constexpr (std::same_as<T, nullptr_t>) {
             []<bool type_available = false> {
                 static_assert(type_available, "Can't dereference a flag");
@@ -105,7 +121,8 @@ struct Argument {
     }
 
     auto operator->() const -> auto const* {
-        return &**this;
+        auto const& r = **this;
+        return &r;
     }
 
     template <typename CB>
@@ -126,8 +143,9 @@ struct Argument {
         CTor(Argument& desc)
             : arg{desc.parent?&desc.parent->storage.arg:nullptr, detectType()}
         {
-            arg.arg  = desc.arg;
-            arg.desc = desc.desc;
+            arg.args    = desc.args;
+            arg.symlink = desc.symlink;
+            arg.desc    = desc.desc;
             if constexpr (std::same_as<std::filesystem::path, T>) {
                 arg.completion = " -f ";
             } else if (desc.mapping) {
@@ -148,6 +166,7 @@ struct Argument {
             arg.init = [&]() {
                 desc.isSet = true;
                 arg.cb = desc.cb;
+                arg.cb_priority = desc.cb_priority;
                 if constexpr (std::same_as<nullptr_t, T>) {
                 } else if constexpr (std::is_arithmetic_v<T>
                                      || std::same_as<std::string, T>

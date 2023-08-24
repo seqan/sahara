@@ -6,7 +6,7 @@
 [subrepo]
 	remote = git@github.com:SGSSGene/clice.git
 	branch = main
-	commit = 782f91917ab629a4c6480eddec3e5b2effad5acb
+	commit = 3213b07acbfcc6fd03d71cd7777d0d0e699e6a4a
 	parent = 27eb4d5554af2124be84b51364f165f1cffeb9df
 	method = merge
 	cmdver = 0.4.6
