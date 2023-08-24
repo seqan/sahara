@@ -13,7 +13,7 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "index",
+auto cli = clice::Argument{ .args   = "index",
                             .desc   = "construct an index over a given input file",
                             .value  = std::filesystem::path{},
                             .cb     = app,

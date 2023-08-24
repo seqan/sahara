@@ -14,20 +14,20 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "kmer-index",
+auto cli = clice::Argument{ .args   = "kmer-index",
                             .desc   = "construct an index over a given input file",
                             .value  = std::filesystem::path{},
                             .cb     = app,
 };
 
 auto cliKmer = clice::Argument{ .parent = &cli,
-                                .arg    = "--kmer",
+                                .args   = "--kmer",
                                 .desc   = "splitting the text into kmers",
                                 .value  = size_t{1}
 };
 
 auto cliWindow = clice::Argument{ .parent = &cli,
-                                .arg    = "--window",
+                                .args   = "--window",
                                 .desc   = "using windows",
                                 .value  = size_t{1}
 };

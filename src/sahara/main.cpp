@@ -2,7 +2,7 @@
 #include <fmt/format.h>
 
 namespace {
-auto cliHelp = clice::Argument { .arg      = {"--help"},
+auto cliHelp = clice::Argument { .args     = {"-h", "--help"},
                                  .desc     = "prints the help page",
                                  .cb       = []{ fmt::print("{}", clice::generateHelp()); exit(0); },
 };

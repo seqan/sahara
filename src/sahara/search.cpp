@@ -22,60 +22,60 @@ using namespace fmindex_collection;
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "search",
+auto cli = clice::Argument{ .args   = "search",
                             .desc   = "search for a given pattern",
                             .cb     = app,
 };
 
 auto cliQuery = clice::Argument{ .parent = &cli,
-                                 .arg    = "--query",
+                                 .args   = {"-q", "--query"},
                                  .desc   = "path to a query file",
                                  .value  = std::filesystem::path{},
 };
 
 auto cliIndex = clice::Argument{ .parent = &cli,
-                                 .arg    = "--index",
+                                 .args   = {"-i", "--index"},
                                  .desc   = "path to the index file",
                                  .value  = std::filesystem::path{},
 };
 
 auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .arg    = "--output",
+                                  .args   = {"-o", "--output"},
                                   .desc   = "output path",
                                   .value  = std::filesystem::path{"sahara-output.txt"},
 };
 
 
 auto cliGenerator  = clice::Argument{ .parent = &cli,
-                                      .arg    = "--generator",
+                                      .args   = {"-g", "--generator"},
                                       .desc   = "picking optimum search scheme generator",
                                       .value  = std::string{"h2-k2"},
 };
 
 auto cliDynGenerator = clice::Argument{ .parent = &cli,
-                                        .arg    = "--dynamic_generator",
+                                        .args   = "--dynamic_generator",
                                         .desc   = "should generator run expand search scheme with dynamic extension",
 };
 
 auto cliNumErrors = clice::Argument{ .parent = &cli,
-                                     .arg    = "--errors",
+                                     .args   = {"-e", "--errors"},
                                      .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
                                      .value  = size_t{},
 };
 auto cliNoReverse = clice::Argument{ .parent = &cli,
-                                     .arg    = "--no-reverse",
+                                     .args   = "--no-reverse",
                                      .desc   = "do not search for reversed complements",
 };
 
 enum class SearchMode { All, BestHits };
 auto cliSearchMode = clice::Argument{ .parent = &cli,
-                                      .arg    = "--search_mode",
+                                      .args   = {"-m", "--search_mode"},
                                       .desc   = "do not search for reversed complements",
                                       .value  = SearchMode::All,
                                       .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
 };
 auto cliMaxHits   = clice::Argument{ .parent = &cli,
-                                     .arg    = "--max_hits",
+                                     .args   = "--max_hits",
                                      .desc   = "maximum number of hits per query",
                                      .value  = 0,
 };
