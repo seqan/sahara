@@ -4,7 +4,7 @@ A c++20 library for **bioinformatics**. Providing functions for reading and writ
 
 It supports many file like **fasta**, **fastq**, **faidx**, **vcf**, **bcf**, **sam**, **bam**.
 
-See [documentation](https://sgssgene.github.io/IVio/) for detailed information.
+See [documentation](https://iv-project.github.io/IVio/) for detailed information.
 
 ## Usage CMake
 To use this package with cmake you must add this repository via `find_package` and add a `target_link_libraries`.
@@ -17,7 +17,7 @@ target_link_libraries(your_exec PUBLIC ivio::ivio)
 
 ## Benchmarks
 
-For detailed benchmarks see [IVbenchmark](https://github.com/SGSSGene/IVbenchmark#results).
+For detailed benchmarks see [IVbenchmark](https://github.com/iv-project/IVbenchmark#results).
 
 ## Sample snippet
 This demonstrates how reading a file and printing it to the command line looks like:

@@ -7,6 +7,7 @@ nav:
     - "formats-fasta.md"
     - "formats-vcf.md"
 use_directory_urls: false
+repo_url: https://github.com/iv-project/IVio
 theme:
   name: readthedocs
   custom_dir: docs/readthedocs-customization
