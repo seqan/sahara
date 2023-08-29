@@ -79,7 +79,7 @@ struct compact_encoding {
             , fwdHash{ptr->k}
             , bwdHash{ptr->k}
         {
-            if (ptr->size() > 0) {
+            if (ptr->k <= ptr->size()) {
                 for (size_t i{0}; i < ptr->k; ++i) {
                     auto addValue = ptr->values[i];
                     fwdHash.nextRight(0, addValue);
@@ -88,7 +88,7 @@ struct compact_encoding {
                     }
                 }
             }
-            pos = ptr->k;
+            pos = ptr->k-1;
             if constexpr (alphabet_with_complement_c<Alphabet> and UseCanonicalKmers) {
                 minHash = std::min(fwdHash.value() ^ ptr->seed, bwdHash.value() ^ ptr->seed);
             } else {
@@ -99,6 +99,13 @@ struct compact_encoding {
             return minHash;
         }
         auto operator++() -> iterator& {
+            pos += 1;
+            if (pos >= ptr->values.size()) {
+                return *this;
+            }
+
+            assert(pos < ptr->values.size());
+
             auto rmValue  = ptr->values[pos-ptr->k];
             auto addValue = ptr->values[pos];
             fwdHash.nextRight(rmValue, addValue);
@@ -108,11 +115,10 @@ struct compact_encoding {
             } else {
                 minHash = fwdHash.value() ^ ptr->seed;
             }
-            pos += 1;
             return *this;
         }
         bool operator==(nullptr_t) const {
-            return pos > ptr->values.size();
+            return pos >= ptr->values.size();
         }
     };
 
