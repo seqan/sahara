@@ -19,6 +19,7 @@ find_package(fmindex_collection REQUIRED PATHS lib/fmindex-collection)
 find_package(clice REQUIRED PATHS lib/clice)
 find_package(ivio REQUIRED PATHS lib/ivio)
 find_package(ivsigma REQUIRED PATHS lib/ivsigma)
+find_package(xxHash REQUIRED PATHS lib/cmake)
 
 
 add_subdirectory(src/sahara)
