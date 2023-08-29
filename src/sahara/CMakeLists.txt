@@ -21,4 +21,5 @@ target_link_libraries(sahara
     ivsigma::ivsigma
     clice::clice
     cereal::cereal
+    xxhash
 )

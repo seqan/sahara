@@ -1,3 +1,4 @@
+#include "hash.h"
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
 
@@ -26,11 +27,29 @@ auto cliKmer = clice::Argument{ .parent = &cli,
                                 .value  = size_t{1}
 };
 
+enum class KmerMode : uint8_t {
+    Winnowing = 0,
+    Mod = 1,
+};
+auto cliKmerMode = clice::Argument{ .parent = &cli,
+                                    .args   = "--kmer_mode",
+                                    .desc   = "valid modes are: winnowing and mod",
+                                    .value  = KmerMode::Winnowing,
+                                    .mapping = {{{"winnowing", KmerMode::Winnowing}, {"mod", KmerMode::Mod}}},
+};
+
 auto cliWindow = clice::Argument{ .parent = &cli,
                                 .args   = "--window",
-                                .desc   = "using windows",
+                                .desc   = "using windows (only valid for '--kmer_mode winnowing' mode",
                                 .value  = size_t{1}
 };
+
+auto cliMod = clice::Argument{ .parent = &cli,
+                               .args   = "--mod",
+                               .desc   = "take every 'mod' element (only valid for '--kmer_mode mod' mode",
+                               .value  = size_t{4}
+};
+
 
 void app() {
     using Alphabet = ivs::d_dna5;
@@ -46,36 +65,65 @@ void app() {
     auto reader = ivio::fasta::reader {{*cli}};
     size_t totalSize{};
     size_t kmerLen{};
-    auto ref = std::vector<std::vector<uint8_t>>{};
     auto ref_kmer = std::vector<std::vector<uint8_t>>{};
     auto uniq = std::unordered_map<size_t, uint8_t>{};
+    auto ref = std::vector<uint8_t>{};
+    size_t recordNbr = 0;
     for (auto record : reader) {
+        recordNbr += 1;
         totalSize += record.seq.size();
-        ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
-        if (auto pos = ivs::verify_rank(ref.back()); pos) {
-            throw error_fmt{"ref '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, ref.size(), *pos, record.seq[*pos], record.seq[*pos]};
+        ref.resize(record.seq.size());
+        ivs::convert_char_to_rank<Alphabet>(record.seq, ref);
+        if (auto pos = ivs::verify_rank(ref); pos) {
+            throw error_fmt{"ref '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, recordNbr, *pos, record.seq[*pos], record.seq[*pos]};
         }
 
 
         ref_kmer.emplace_back();
-        for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref.back(), /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
-            if (auto iter = uniq.find(v); iter != uniq.end()) {
-                ref_kmer.back().emplace_back(iter->second);
-            } else {
-                if (uniq.size() >= KmerSigma) throw error_fmt{"to many different kmers {} >= KmerSigma, doesn't fit into OccTable", uniq.size(), KmerSigma};
-                uniq[v] = uniq.size()+1;
-                ref_kmer.back().emplace_back(uniq[v]);
+        if (*cliKmerMode == KmerMode::Winnowing) {
+            for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref, /*.k=*/*cliKmer, /*.window=*/*cliWindow)) {
+                if (auto iter = uniq.find(v); iter != uniq.end()) {
+                    ref_kmer.back().emplace_back(iter->second);
+                } else {
+                    uniq[v] = uniq.size()+1;
+                    ref_kmer.back().emplace_back(uniq[v]);
+                }
             }
+        } else if (*cliKmerMode == KmerMode::Mod) {
+            uint64_t mask = (1<<*cliMod)-1;
+            for (auto v : ivs::compact_encoding<Alphabet>(ref, /*.k=*/*cliKmer)) {
+                v = hash(v);
+                if ((v & mask) != 0) continue;
+                v = v >> *cliMod;
+                if (auto iter = uniq.find(v); iter != uniq.end()) {
+                    ref_kmer.back().emplace_back(iter->second);
+                } else {
+                    uniq[v] = uniq.size()+1;
+                    ref_kmer.back().emplace_back(uniq[v]);
+                }
+            }
+        } else {
+            throw error_fmt("unknown kmer mode: {}", uint8_t(*cliKmerMode));
         }
         kmerLen += ref_kmer.back().size();
     }
+    if (uniq.size() >= KmerSigma) throw error_fmt{"to many different kmers {} >= {}, doesn't fit into OccTable", uniq.size(), KmerSigma};
 
 
     fmt::print("config:\n");
     fmt::print("  file:            {}\n", *cli);
     fmt::print("  sigma:           {:>10}\n", Sigma);
-    fmt::print("  references:      {:>10}\n", ref.size());
+    fmt::print("  references:      {:>10}\n", ref_kmer.size());
     fmt::print("  totalSize:       {:>10}\n", totalSize);
+    if (*cliKmerMode == KmerMode::Winnowing) {
+        fmt::print("  kmerMode:        {:>10}\n", "winnowing");
+        fmt::print("  windowSize       {:>10}\n", *cliWindow);
+    } else if (*cliKmerMode == KmerMode::Mod) {
+        fmt::print("  kmerMode:        {:>10}\n", "mod");
+        fmt::print("  modFactor        {:>10}\n", fmt::format("2^{}", *cliMod));
+    } else {
+        throw std::runtime_error("missing code path for unknown kmer mode type");
+    }
     fmt::print("  different kmers: {:>10}\n", uniq.size());
     fmt::print("  kmer-seq-len:    {:>10}\n", kmerLen);
 
@@ -83,14 +131,14 @@ void app() {
 
     // create index
     //using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
-    using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
-    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{std::move(ref), /*samplingRate*/16, /*threadNbr*/1};
+    //using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
+    //auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{std::move(ref), /*samplingRate*/16, /*threadNbr*/1};
 
-    timing.emplace_back("index creation", stopWatch.reset());
+    //timing.emplace_back("index creation", stopWatch.reset());
 
     // create kmer-index
     using KmerTable = fmindex_collection::occtable::interleavedEPRV7::OccTable<KmerSigma>;
-    auto kmerIndex = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{std::move(ref_kmer), /*samplingRate*/65536, /*threadNbr*/1};
+    auto kmerIndex = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{std::move(ref_kmer), /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("kmer-index creation", stopWatch.reset());
 
@@ -98,7 +146,16 @@ void app() {
     auto indexPath = cli->string() + ".kmer.idx";
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
-    archive(index, kmerIndex, *cliKmer, *cliWindow, uniq);
+    auto fileFormatVersion = uint32_t{0x01}; // Saving as format v0x01
+    archive(fileFormatVersion);
+    archive(kmerIndex, *cliKmer, *cliKmerMode);
+    if (*cliKmerMode == KmerMode::Winnowing) {
+        archive(*cliWindow, uniq);
+    } else if (*cliKmerMode == KmerMode::Mod) {
+        archive(*cliMod, uniq);
+    } else {
+        throw std::runtime_error("missing code path for unknown kmer mode type");
+    }
     ofs.close();
 
     timing.emplace_back("saving to disk", stopWatch.reset());
@@ -106,10 +163,10 @@ void app() {
     fmt::print("stats:\n");
     double totalTime{};
     for (auto const& [key, time] : timing) {
-        fmt::print("  {:<20} {:> 10.2f}s\n", key + " time:", time);
+        fmt::print("  {:<25} {:> 10.2f}s\n", key + " time:", time);
         totalTime += time;
     }
-    fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
+    fmt::print("  total time:               {:> 10.2f}s\n", totalTime);
 
 }
 }

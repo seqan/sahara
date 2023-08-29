@@ -1,3 +1,4 @@
+#include "hash.h"
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
 
@@ -81,6 +82,11 @@ auto cliMaxHits   = clice::Argument{ .parent = &cli,
                                      .value  = 0,
 };
 
+enum class KmerMode : uint8_t {
+    Winnowing = 0,
+    Mod = 1,
+};
+
 void app() {
     using Alphabet = ivs::d_dna5;
     constexpr size_t Sigma = Alphabet::size();
@@ -107,8 +113,6 @@ void app() {
 
 
     // load index file
-    //using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
-    using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
     using KmerTable = fmindex_collection::occtable::interleavedEPRV7::OccTable<KmerSigma>;
 
 
@@ -116,67 +120,119 @@ void app() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
-    auto kmerIndex = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
-    size_t kmer{};
-    size_t window{};
+    auto index = fmindex_collection::FMIndex<KmerTable, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    size_t kmer;
+    size_t window;
     auto uniq = std::unordered_map<size_t, uint8_t>{};
+    auto kmerMode = KmerMode{};
+    size_t kmerModShift;
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
-        archive(index, kmerIndex, kmer, window, uniq);
+        uint32_t fileFormatVersion;
+        archive(fileFormatVersion);
+        if (fileFormatVersion == 0x01) {
+            archive(index, kmer, kmerMode);
+            if (kmerMode == KmerMode::Winnowing) {
+                archive(window, uniq);
+            } else if (kmerMode == KmerMode::Mod) {
+                archive(kmerModShift, uniq);
+            } else {
+                throw error_fmt("unknown kmer mode {}", uint8_t(kmerMode));
+            }
+        } else {
+            throw error_fmt("unknown file format version for index: {}", fileFormatVersion);
+        }
     }
+    fmt::print("  kmer mode:           {}\n", uint8_t(kmerMode));
+    if (kmerMode == KmerMode::Winnowing) {
+        fmt::print("  window:           {}\n", window);
+    } else if (kmerMode == KmerMode::Mod) {
+        fmt::print("  kmer mod:            {}\n", kmerModShift);
+    } else {
+        throw error_fmt("unknown kmer mode {}", uint8_t(kmerMode));
+    }
+
     timing.emplace_back("ld index", stopWatch.reset());
 
     // load fasta file
     auto reader = ivio::fasta::reader {{*cliQuery}};
     size_t totalSize{};
     size_t kmerLen{};
-    auto ref = std::vector<std::vector<uint8_t>>{};
     auto ref_kmer = std::vector<std::vector<uint32_t>>{};
-    auto uniq2 = uniq;
     size_t smallestKmer = std::numeric_limits<size_t>::max();
     size_t longestKmer{};
-    for (auto record : reader) {
-        totalSize += record.seq.size();
-        ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
-        if (auto pos = ivs::verify_rank(ref.back()); pos) {
-            throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, ref.size(), *pos, record.seq[*pos], record.seq[*pos]};
-        }
+    size_t skipped{};
+    [&]() {
+        auto ref = std::vector<uint8_t>{};
+        size_t recordNbr = 0;
+        for (auto record : reader) {
+            recordNbr += 1;
+            totalSize += record.seq.size();
+            ref.resize(record.seq.size());
+            ivs::convert_char_to_rank<Alphabet>(record.seq, ref);
+            if (auto pos = ivs::verify_rank(ref); pos) {
+                throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, recordNbr, *pos, record.seq[*pos], record.seq[*pos]};
+            }
 
-        [&]() {
-            ref_kmer.emplace_back();
-            for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref.back(), /*.k=*/kmer, /*.window=*/window)) {
-                if (auto iter = uniq.find(v); iter != uniq.end()) {
-                    ref_kmer.back().emplace_back(iter->second);
+            [&]() {
+                ref_kmer.emplace_back();
+                if (kmerMode == KmerMode::Winnowing) {
+                    for (auto v : ivs::winnowing_minimizer<Alphabet, /*DuplicatesAllowed=*/false>(ref, /*.k=*/kmer, /*.window=*/window)) {
+                        if (auto iter = uniq.find(v); iter != uniq.end()) {
+                            ref_kmer.back().emplace_back(iter->second);
+                        } else {
+                            ref_kmer.pop_back();
+                            return;
+                        }
+                    }
+                } else if (kmerMode == KmerMode::Mod) {
+                    uint64_t mask = (1<<kmerModShift)-1;
+                    for (auto v : ivs::compact_encoding<Alphabet, /*UseCanonicalKmers=*/true>{ref, /*.k=*/kmer}) {
+                        v = hash(v);
+                        if ((v & mask) != 0) continue;
+                        v = v >> kmerModShift;
+
+                        if (auto iter = uniq.find(v); iter != uniq.end()) {
+                            ref_kmer.back().emplace_back(iter->second);
+                        } else {
+                            ref_kmer.pop_back();
+                            return;
+                        }
+                    }
                 } else {
-                    ref_kmer.pop_back();
-                    ref.pop_back();
-                    return;
+                    throw error_fmt("unknown kmer mode: {}", uint8_t(kmerMode));
                 }
-            }
-            smallestKmer = std::min(ref_kmer.back().size(), smallestKmer);
-            longestKmer = std::max(ref_kmer.back().size(), longestKmer);
-            kmerLen += ref_kmer.back().size();
-
-            if (!cliNoReverse) {
-                ref.emplace_back(ivs::reverse_complement_rank<Alphabet>(ref.back()));
-                ref_kmer.emplace_back(ref_kmer.back());
-                std::ranges::reverse(ref_kmer.back());
-            }
-        }();
-    }
+                if (ref_kmer.back().size() >= 6) {
+                    smallestKmer = std::min(ref_kmer.back().size(), smallestKmer);
+                    longestKmer = std::max(ref_kmer.back().size(), longestKmer);
+                    kmerLen += ref_kmer.back().size();
+                    if (!cliNoReverse) {
+                        ref_kmer.emplace_back(ref_kmer.back());
+                        std::ranges::reverse(ref_kmer.back());
+                    }
+                } else {
+                    skipped += 1;
+                    ref_kmer.pop_back();
+                    if (!cliNoReverse) {
+                        skipped += 1;
+                    }
+                }
+            }();
+        }
+    }();
+    fmt::print("skipped {} of {} queries\n", skipped, skipped + ref_kmer.size());
     fmt::print("avg kmer len: {}\n", kmerLen * 1.0/ ref_kmer.size());
     fmt::print("smallest/longest kmer len: {}/{}\n", smallestKmer, longestKmer);
-    fmt::print("index uniq {}, query uniq {}\n", uniq2.size(), uniq.size());
+    fmt::print("index uniq {}\n", uniq.size());
 
-    if (ref.empty()) {
+    if (ref_kmer.empty()) {
         throw error_fmt{"query file {} was empty - abort\n", *cliQuery};
     }
 
     {
-        auto fwdQueries = ref.size() / (cliNoReverse?1:2);
-        auto bwdQueries = ref.size() - fwdQueries;
+        auto fwdQueries = ref_kmer.size() / (cliNoReverse?1:2);
+        auto bwdQueries = ref_kmer.size() - fwdQueries;
         fmt::print("fwd queries: {}\n"
                    "bwd queries: {}\n",
                    fwdQueries, bwdQueries);
@@ -193,18 +249,6 @@ void app() {
         return iter->second;
     }();
 
-    auto loadSearchScheme = [&](int minK, int maxK) {
-        auto len = ref[0].size();
-        auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
-        if (!cliDynGenerator) {
-            oss = search_schemes::expand(oss, len);
-        } else {
-            oss = search_schemes::expandDynamic(oss, len, Sigma, index.size());
-        }
-        fmt::print("node count: {}\n", search_schemes::nodeCount(oss, Sigma));
-        fmt::print("expected node count: {}\n", search_schemes::expectedNodeCount(oss, Sigma, index.size()));
-        return oss;
-    };
 
     auto loadKmerSearchScheme = [&](int minK, int maxK, int len) {
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
@@ -223,24 +267,12 @@ void app() {
                 }
             }
         }
-//        fmt::print("node count: {}\n", search_schemes::nodeCount(oss, Sigma));
-//        fmt::print("expected node count: {}\n", search_schemes::expectedNodeCount(oss, Sigma, index.size()));
         return oss;
     };
 
 
-    //auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
-    auto resultCursors = std::vector<std::tuple<size_t, FMIndexCursor<decltype(index)>, size_t>>{};
-
-    auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
-        resultCursors.emplace_back(queryId, cursor, errors);
-    };
-
-    auto search_schemes  = loadSearchScheme(0, k);
-    auto reordered_list  = search_ng21::prepare_reorder(search_schemes);
-
-    auto kmer_search_schemes_by_len = std::vector<decltype(search_schemes)>{};
-    auto kmer_reordered_list_by_len = std::vector<decltype(reordered_list)>{};
+    auto kmer_search_schemes_by_len = std::vector<search_schemes::Scheme>{};
+    auto kmer_reordered_list_by_len = std::vector<std::vector<std::vector<search_ng21::Block<size_t>>>>{};
     kmer_search_schemes_by_len.resize(longestKmer+1);
     kmer_reordered_list_by_len.resize(longestKmer+1);
     for (size_t i{smallestKmer}; i <= longestKmer; ++i){
@@ -250,59 +282,11 @@ void app() {
 
     timing.emplace_back("searchScheme", stopWatch.reset());
 
-    size_t totalKmerHits{};
-    #if 1
-    for (size_t qidx{0}; qidx < ref.size(); ++qidx) {
-        auto cursor = search_no_errors::search(kmerIndex, ref_kmer[qidx]);
-        if (!cursor.empty()) {
-            totalKmerHits += cursor.count();
-            #if 0
-            auto cursor2 = search_no_errors::search(index, ref[qidx]);
-            if (!cursor2.empty()) {
-                resultCursors.emplace_back(qidx, cursor2, /*errors*/0);
-            }
-            #endif
-        }
+    auto resultCursors = std::vector<std::tuple<size_t, fmindex_collection::select_cursor_t<decltype(index)>, size_t>>{};
+    for (size_t qidx{0}; qidx < ref_kmer.size(); ++qidx) {
+        auto cursor = search_no_errors::search(index, ref_kmer[qidx]);
+        resultCursors.emplace_back(qidx, cursor, 0);
     }
-    #else
-    for (size_t qidx{0}; qidx < ref.size(); ++qidx) {
-        auto& kmer_search_schemes = kmer_search_schemes_by_len[ref_kmer[qidx].size()];
-        auto& kmer_reordered_list = kmer_reordered_list_by_len[ref_kmer[qidx].size()];
-
-        for (size_t i{0}; i < reordered_list.size(); ++i) {
-            auto& kmer_reordered     = kmer_reordered_list[i];
-            auto& kmer_search_scheme = kmer_search_schemes[i];
-            bool found{false};
-            auto& kmer_search = kmer_reordered;
-            #if 0
-            for (size_t k {0}; k < kmer_search.size(); ++k) {
-                kmer_search[k].rank = ref_kmer[qidx][kmer_search_scheme.pi[k]];
-                assert(kmer_search[k].rank != 0);
-            }
-            search_ng21::Search{kmerIndex, kmer_search, [&](auto cur, size_t e) {
-                totalKmerHits += cur.count();
-                found = true;
-                return std::true_type{};
-            }}.run();
-            //continue;
-            #else
-            found = true;
-            #endif
-
-            if (found) {
-                auto& search        = reordered_list[i];
-                auto& search_scheme = search_schemes[i];
-                for (size_t k {0}; k < search.size(); ++k) {
-                    search[k].rank = ref[qidx][search_scheme.pi[k]];
-                }
-                search_ng21::Search{index, search, [&](auto cur, size_t e) {
-                    res_cb(qidx, cur, e);
-                    return std::false_type{};
-                }}.run();
-            }
-        }
-    }
-    #endif
 
     timing.emplace_back("search", stopWatch.reset());
 
@@ -312,6 +296,12 @@ void app() {
             results.emplace_back(queryId, seqId, pos, e);
         }
     }
+
+/*    for (auto const& [queryId, cursor, e] : resultCursors) {
+        for (auto [seqId, pos] : LocateLinear{index, cursor}) {
+            results.emplace_back(queryId, seqId, pos, e);
+        }
+    }*/
 
     timing.emplace_back("locate", stopWatch.reset());
 
@@ -333,8 +323,7 @@ void app() {
         totalTime += time;
     }
     fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
-    fmt::print("  queries per second:  {:> 10.0f}q/s\n", ref.size() / totalTime);
+    fmt::print("  queries per second:  {:> 10.0f}q/s\n", ref_kmer.size() / totalTime);
     fmt::print("  number of hits:      {:>10}\n", results.size());
-    fmt::print("  number of kmerHits   {:>10}\n", totalKmerHits);
 }
 }
