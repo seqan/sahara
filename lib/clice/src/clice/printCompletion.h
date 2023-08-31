@@ -60,7 +60,7 @@ R"(function clice_GetOpts ()
     fi
 })", argv0);
     } else if (gen == std::string{"zsh"}) {
-        fmt::print("{}\ncompdef clice_GetOpts -P $(basename {}) -N\nunset '_comps[{}]'\n",
+        fmt::print("{}\ncompdef clice_GetOpts -P $(basename {}) -N\nunset \"_comps[$(basename {})]\"\n",
 R"abc(clice_GetOpts () {
     completions=$(CLICE_COMPLETION= ${(@q)words[@]:0:$CURRENT})
     completions=(${(@f)completions})
@@ -73,7 +73,7 @@ R"abc(clice_GetOpts () {
         EXT="$(echo "${completions}" | cut -d ' ' -f 3)"
         _files -g "*${EXT}"
     else
-        compadd ${completions[@]}
+        compadd -- "${completions[@]}"
     fi
 })abc", argv0, argv0);
     } else {
