@@ -49,8 +49,6 @@ auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
 
 void app() {
     using Alphabet = ivs::d_dna5;
-    constexpr size_t Sigma = Alphabet::size();
-    constexpr size_t KmerSigma = 128;
 
     fmt::print("constructing an index for {}\n", *cli);
 
@@ -106,12 +104,9 @@ void app() {
         }
         kmerLen += ref_kmer.back().size();
     }
-    if (uniq.size() >= KmerSigma) throw error_fmt{"to many different kmers {} >= {}, doesn't fit into OccTable", uniq.size(), KmerSigma};
-
 
     fmt::print("config:\n");
     fmt::print("  file:            {}\n", *cli);
-    fmt::print("  sigma:           {:>10}\n", Sigma);
     fmt::print("  references:      {:>10}\n", ref_kmer.size());
     fmt::print("  totalSize:       {:>10}\n", totalSize);
     if (*cliKmerMode == AdaptiveKmerIndex::KmerMode::Winnowing) {
