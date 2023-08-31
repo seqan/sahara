@@ -7,11 +7,12 @@
 cmake_minimum_required (VERSION 3.14)
 
 add_executable(sahara
+    AdaptiveKmerIndex.cpp
     index.cpp
     kmer-index.cpp
     kmer-search.cpp
-    search.cpp
     main.cpp
+    search.cpp
 )
 
 target_link_libraries(sahara

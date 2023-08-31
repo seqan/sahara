@@ -19,6 +19,12 @@ auto cli = clice::Argument{ .args   = "index",
                             .cb     = app,
 };
 
+auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
+                                         .args   = "--ignore_unknown",
+                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+};
+
+
 void app() {
     using Alphabet = ivs::d_dna5;
     constexpr size_t Sigma = Alphabet::size();
@@ -36,7 +42,11 @@ void app() {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
         if (auto pos = ivs::verify_rank(ref.back()); pos) {
-            throw error_fmt{"ref '{}' ({}) has invalid character '{}' (0x{:02x}) at position {}", record.id, ref.size(), record.seq[*pos], record.seq[*pos], *pos};
+            if (cliIgnoreUnknown) {
+                ref.back()[*pos] = Alphabet::char_to_rank('N');
+            } else {
+                throw error_fmt{"ref '{}' ({}) has invalid character '{}' (0x{:02x}) at position {}", record.id, ref.size(), record.seq[*pos], record.seq[*pos], *pos};
+            }
         }
     }
     if (ref.empty()) {

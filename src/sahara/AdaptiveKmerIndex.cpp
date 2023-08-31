@@ -1,0 +1,101 @@
+#include "AdaptiveKmerIndex.h"
+#include "utils/error_fmt.h"
+
+#include <cereal/types/array.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/fmindex-collection.h>
+#include <fmindex-collection/locate.h>
+#include <fmindex-collection/occtable/all.h>
+#include <fmindex-collection/search/all.h>
+#include <fstream>
+#include <unordered_map>
+
+static constexpr size_t KmerSigma = 128;
+
+struct AdaptiveKmerIndex::Pimpl {
+    Config config;
+
+    std::unordered_map<size_t, uint8_t> denseMap; // converting kmer hash values to uniq dense values
+
+    // create kmer-index
+    template <size_t Sigma>
+    using Index = fmindex_collection::FMIndex<fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>, fmindex_collection::DenseCSA>;
+    std::variant<Index<3>, Index<4>, Index<5>, Index<6>, Index<16>, Index<32>, Index<64>, Index<128>> index{Index<3>{fmindex_collection::cereal_tag{}}};
+
+    void initIndex() {
+        size_t maxValue = config.largestValue;
+        if (maxValue < 3) index = Index<3>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <   4) index = Index<  4>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <   5) index = Index<  5>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <   6) index = Index<  6>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <  16) index = Index< 16>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <  32) index = Index< 32>{fmindex_collection::cereal_tag{}};
+        else if (maxValue <  64) index = Index< 64>{fmindex_collection::cereal_tag{}};
+        else if (maxValue < 128) index = Index<128>{fmindex_collection::cereal_tag{}};
+    }
+};
+
+AdaptiveKmerIndex::AdaptiveKmerIndex()
+    : pimpl{std::make_unique<AdaptiveKmerIndex::Pimpl>()}
+{}
+
+
+AdaptiveKmerIndex::AdaptiveKmerIndex(Config config, std::vector<std::vector<uint8_t>> _text)
+    : AdaptiveKmerIndex{} {
+    if (config.largestValue > 128) {
+        throw error_fmt("text with values above 128 is not allowed (requested largest value: {})", config.largestValue);
+    }
+    pimpl->config = config;
+    pimpl->initIndex();
+    std::visit([&]<typename Index>(Index& index) {
+        index = Index{std::move(_text), /*sampingRate=*/16, /*threadNbr=*/1};
+    }, pimpl->index);
+}
+
+AdaptiveKmerIndex::~AdaptiveKmerIndex() = default;
+auto AdaptiveKmerIndex::config() const -> Config {
+    return pimpl->config;
+}
+
+void AdaptiveKmerIndex::load(cereal::BinaryInputArchive& archive) {
+    archive(pimpl->config.largestValue);
+    pimpl->initIndex();
+    std::visit([&](auto& index) {
+        archive(index);
+    }, pimpl->index);
+    archive(pimpl->config.kmerLen, pimpl->config.mode);
+    if (pimpl->config.mode == KmerMode::Winnowing) {
+        archive(pimpl->config.window);
+    } else if (pimpl->config.mode == KmerMode::Mod) {
+        archive(pimpl->config.modExp);
+    } else {
+        throw error_fmt("unknown kmer mode {}", uint8_t(pimpl->config.mode));
+    }
+
+}
+
+void AdaptiveKmerIndex::save(cereal::BinaryOutputArchive& archive) const {
+    archive(pimpl->config.largestValue);
+    std::visit([&](auto const& index) {
+        archive(index);
+    }, pimpl->index);
+    archive(pimpl->config.kmerLen, pimpl->config.mode);
+    if (pimpl->config.mode == KmerMode::Winnowing) {
+        archive(pimpl->config.window);
+    } else if (pimpl->config.mode == KmerMode::Mod) {
+        archive(pimpl->config.modExp);
+    } else {
+        throw error_fmt("missing code path for unknown kmer mode type {}", uint8_t(pimpl->config.mode));
+    }
+}
+
+void AdaptiveKmerIndex::search(std::span<uint8_t const> _query, std::function<void(size_t refid, size_t refpos)> const& _report) const {
+     std::visit([&](auto const& index) {
+        auto cursor = fmindex_collection::search_no_errors::search(index, _query);
+        for (auto [seqId, pos] : fmindex_collection::LocateLinear{index, cursor}) {
+            _report(seqId, pos);
+        }
+   }, pimpl->index);
+}
