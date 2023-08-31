@@ -70,7 +70,7 @@ auto cliNoReverse = clice::Argument{ .parent = &cli,
 enum class SearchMode { All, BestHits };
 auto cliSearchMode = clice::Argument{ .parent = &cli,
                                       .args   = {"-m", "--search_mode"},
-                                      .desc   = "do not search for reversed complements",
+                                      .desc   = "search mode, all (default) or besthits",
                                       .value  = SearchMode::All,
                                       .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
 };
