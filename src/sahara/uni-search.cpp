@@ -22,7 +22,7 @@ using namespace fmindex_collection;
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "single-search",
+auto cli = clice::Argument{ .args   = "uni-search",
                             .desc   = "search for a given pattern",
                             .cb     = app,
 };

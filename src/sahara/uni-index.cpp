@@ -13,8 +13,8 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "single-index",
-                            .desc   = "construct an index over a given input file",
+auto cli = clice::Argument{ .args   = "uni-index",
+                            .desc   = "construct an unidirectional index over a given input file",
                             .value  = std::filesystem::path{},
                             .cb     = app,
 };

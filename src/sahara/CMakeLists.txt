@@ -13,8 +13,8 @@ add_executable(sahara
     kmer-search.cpp
     main.cpp
     search.cpp
-    single-index.cpp
-    single-search.cpp
+    uni-index.cpp
+    uni-search.cpp
 )
 
 target_link_libraries(sahara
