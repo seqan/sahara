@@ -20,7 +20,6 @@ struct ranged_alphabet {
      * \return corresponding rank value
      */
     static constexpr auto char_to_rank(char c) noexcept -> uint8_t {
-        auto index = static_cast<uint8_t>(c);
         if (c < Offset or c-Offset > Size) {
             return 255;
         }

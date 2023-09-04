@@ -24,7 +24,7 @@ int main()
             std::cout << '\n';
         }
         { // Version 3
-            auto output_view = ivs::reverse_complement_rank<ivs::dna4>(input);
+            auto output_view = ivs::view_reverse_complement_rank<ivs::dna4>(input);
             auto output = std::vector<uint8_t>(output_view.begin(), output_view.end());
             for (auto r : output) {
                 std::cout << (int)r;

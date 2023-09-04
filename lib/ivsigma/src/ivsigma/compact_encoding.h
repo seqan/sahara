@@ -117,7 +117,7 @@ struct compact_encoding {
             }
             return *this;
         }
-        bool operator==(nullptr_t) const {
+        bool operator==(std::nullptr_t) const {
             return pos >= ptr->values.size();
         }
     };

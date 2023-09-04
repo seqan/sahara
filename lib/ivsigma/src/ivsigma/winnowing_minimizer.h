@@ -89,7 +89,7 @@ struct winnowing_minimizer {
         }
 
 
-        bool operator==(nullptr_t) const {
+        bool operator==(std::nullptr_t) const {
             return values.empty();
         }
     };

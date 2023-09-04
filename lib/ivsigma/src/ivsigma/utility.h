@@ -293,6 +293,15 @@ auto view_reverse_complement_char = std::views::reverse | std::views::transform(
 
 /********** Functions verify **********/
 
+/*! \brief Checks if char is valid (checks for '\0')
+ *
+ * \param in char input
+ * \return if valid returns true, else false
+ */
+inline auto verify_char(char in) -> bool {
+    return in != '\0';
+}
+
 /*! \brief Returns if string is valid (searches for '\0')
  *
  * \param in char input
@@ -303,6 +312,15 @@ inline auto verify_char(std::span<char const> in) -> std::optional<size_t> {
     auto pos = str.find('\0');
     if (std::string_view::npos == pos) return std::nullopt; // verification successful
     return pos;
+}
+
+/*! \brief Checks if rank is valid (checks for 255)
+ *
+ * \param in rank input
+ * \return if valid returns true, else false
+ */
+inline auto verify_rank(uint8_t in) -> bool {
+    return in != 255;
 }
 
 /*! \brief Returns if all ranks are valid (searches for 255)
