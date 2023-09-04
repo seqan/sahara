@@ -1,3 +1,4 @@
+#include "dr_dna.h"
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
 
@@ -12,8 +13,9 @@
 #include <string>
 
 namespace {
+
 void app();
-auto cli = clice::Argument{ .args   = "index",
+auto cli = clice::Argument{ .args   = "rbi-index-dna4",
                             .desc   = "construct an index over a given input file",
                             .value  = std::filesystem::path{},
                             .cb     = app,
@@ -24,15 +26,9 @@ auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
                                          .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
-auto cliUseDna4 = clice::Argument{ .parent = &cli,
-                                   .args   = "--dna4",
-                                   .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
-};
 
-
-
-template <typename Alphabet>
-void createIndex() {
+void app() {
+    using Alphabet = dr_dna4;
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
@@ -48,19 +44,11 @@ void createIndex() {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
         if (cliIgnoreUnknown) {
-            if (cliUseDna4) {
-                for (auto& v : ref.back()) {
-                    if (ivs::verify_rank(v)) continue;
-                    v = Alphabet::char_to_rank('A') + rand() % 4;
-                }
-            } else {
-                for (auto& v : ref.back()) {
-                    if (ivs::verify_rank(v)) continue;
-                    v = Alphabet::char_to_rank('N');
-                }
+            for (auto& v : ref.back()) {
+                if (ivs::verify_rank(v)) continue;
+                v = Alphabet::char_to_rank('A') + (rand()%2);
             }
-        }
-        if (auto pos = ivs::verify_rank(ref.back()); pos) {
+        } else if (auto pos = ivs::verify_rank(ref.back()); pos) {
             throw error_fmt{"ref '{}' ({}) has invalid character '{}' (0x{:02x}) at position {}", record.id, ref.size(), record.seq[*pos], record.seq[*pos], *pos};
         }
     }
@@ -78,18 +66,14 @@ void createIndex() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmindex_collection::RBiFMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/10};
 
     timing.emplace_back("index creation", stopWatch.reset());
 
     // save index
-    auto indexPath = cli->string() + ".idx";
-    if (cliUseDna4) {
-        indexPath = cli->string() + ".dna4.idx";
-    }
+    auto indexPath = cli->string() + ".rbi4.idx";
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
-    archive(Sigma);
     archive(index);
     ofs.close();
 
@@ -103,14 +87,5 @@ void createIndex() {
     }
     fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
 
-}
-
-
-void app() {
-    if (cliUseDna4) {
-        createIndex<ivs::d_dna4>();
-    } else {
-        createIndex<ivs::d_dna5>();
-    }
 }
 }

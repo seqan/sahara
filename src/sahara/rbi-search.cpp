@@ -1,3 +1,5 @@
+#include "dr_dna.h"
+
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
 
@@ -22,7 +24,7 @@ using namespace fmindex_collection;
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "search",
+auto cli = clice::Argument{ .args   = "rbi-search",
                             .desc   = "search for a given pattern",
                             .cb     = app,
 };
@@ -62,10 +64,6 @@ auto cliNumErrors = clice::Argument{ .parent = &cli,
                                      .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
                                      .value  = size_t{},
 };
-auto cliNoReverse = clice::Argument{ .parent = &cli,
-                                     .args   = "--no-reverse",
-                                     .desc   = "do not search for reversed complements",
-};
 
 enum class SearchMode { All, BestHits };
 auto cliSearchMode = clice::Argument{ .parent = &cli,
@@ -80,8 +78,8 @@ auto cliMaxHits   = clice::Argument{ .parent = &cli,
                                      .value  = 0,
 };
 
-template <typename Alphabet>
-void runSearch() {
+void app() {
+    using Alphabet = dr_dna5;
     constexpr size_t Sigma = Alphabet::size();
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
@@ -97,9 +95,6 @@ void runSearch() {
         if (auto pos = ivs::verify_rank(queries.back()); pos) {
             throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, queries.size(), *pos, record.seq[*pos], record.seq[*pos]};
         }
-        if (!cliNoReverse) {
-            queries.emplace_back(ivs::reverse_complement_rank<Alphabet>(queries.back()));
-        }
     }
     if (queries.empty()) {
         throw error_fmt{"query file {} was empty - abort\n", *cliQuery};
@@ -113,21 +108,18 @@ void runSearch() {
         "  generator:           {}\n"
         "  dynamic expansion:   {}\n"
         "  allowed errors:      {}\n"
-        "  reverse complements: {}\n"
         "  search mode:         {}\n"
         "  max hits:            {}\n"
         "  output path:         {}\n",
-        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrors, !cliNoReverse,
+        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrors,
         *cliSearchMode == SearchMode::BestHits?"besthits":"all", *cliMaxHits,
         *cliOutput);
 
 
     {
-        auto fwdQueries = queries.size() / (cliNoReverse?1:2);
-        auto bwdQueries = queries.size() - fwdQueries;
-        fmt::print("fwd queries: {}\n"
-                   "bwd queries: {}\n",
-                   fwdQueries, bwdQueries);
+        auto fwdQueries = queries.size();
+        fmt::print("fwd queries: {}\n",
+                   fwdQueries);
     }
 
     using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
@@ -137,12 +129,10 @@ void runSearch() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    auto index = fmindex_collection::RBiFMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
-        size_t sigma;
-        archive(sigma);
         archive(index);
     }
     timing.emplace_back("ld index", stopWatch.reset());
@@ -152,11 +142,7 @@ void runSearch() {
     auto generator = [&]() {
         auto iter = search_schemes::generator::all.find(*cliGenerator);
         if (iter == search_schemes::generator::all.end()) {
-            auto names = std::vector<std::string>{};
-            for (auto const& [key, gen] : search_schemes::generator::all) {
-                names.push_back(key);
-            }
-            throw error_fmt{"unknown search scheme generetaror \"{}\", valid generators are: {}", *cliGenerator, fmt::join(names, ", ")};
+            throw error_fmt{"unknown search scheme generetaror \"{}\"", *cliGenerator};
         }
         return iter->second;
     }();
@@ -174,7 +160,7 @@ void runSearch() {
         return oss;
     };
 
-    auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, LeftRBiFMIndexCursor<decltype(index)>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
@@ -225,23 +211,5 @@ void runSearch() {
     fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
     fmt::print("  queries per second:  {:> 10.0f}q/s\n", queries.size() / totalTime);
     fmt::print("  number of hits:      {:>10}\n", results.size());
-}
-
-void app() {
-    // load sigma value
-    size_t sigma;
-    {
-        auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
-        auto archive = cereal::BinaryInputArchive{ifs};
-        archive(sigma);
-    }
-    if (sigma == 5) {
-        runSearch<ivs::d_dna4>();
-    } else if (sigma == 6) {
-        runSearch<ivs::d_dna5>();
-    } else {
-        throw error_fmt{"unknown index with {} letters", sigma};
-    }
-
 }
 }
