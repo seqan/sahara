@@ -1,9 +1,7 @@
-# -----------------------------------------------------------------------------------------------------
-# Copyright (c) 2006-2023, Knut Reinert & Freie Universität Berlin
-# Copyright (c) 2016-2023, Knut Reinert & MPI für molekulare Genetik
-# This file may be used, modified and/or redistributed under the terms of the 3-clause BSD-License
-# shipped with this file.
-# -----------------------------------------------------------------------------------------------------
+# SPDX-FileCopyrightText: 2006-2024, Knut Reinert & Freie Universität Berlin
+# SPDX-FileCopyrightText: 2016-2024, Knut Reinert & MPI für molekulare Genetik
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required (VERSION 3.16)
 
 project (sahara VERSION 1.0.0)
@@ -13,13 +11,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(fmt REQUIRED)
-find_package(cereal REQUIRED PATHS lib/fmindex-collection/lib)
-find_package(fmindex_collection REQUIRED PATHS lib/fmindex-collection)
-find_package(clice REQUIRED PATHS lib/clice)
-find_package(ivio REQUIRED PATHS lib/ivio)
-find_package(ivsigma REQUIRED PATHS lib/ivsigma)
-find_package(xxHash REQUIRED PATHS lib/cmake)
 
+find_package(OpenMP QUIET)
+include(cmake/CPM.cmake)
+CPMAddPackage("gh:SGSSGene/cpm.dependencies@1.0.0")
+CPMLoadDependenciesFile("${CMAKE_CURRENT_SOURCE_DIR}/cpm.dependencies")
 
 add_subdirectory(src/sahara)

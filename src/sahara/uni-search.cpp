@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2006-2024, Knut Reinert & Freie Universität Berlin
+// SPDX-FileCopyrightText: 2016-2024, Knut Reinert & MPI für molekulare Genetik
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
 
@@ -5,7 +9,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
@@ -94,14 +98,14 @@ void app() {
                    fwdQueries, bwdQueries);
     }
 
-    using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
-//    using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
+    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
+//    using Table = fmindex_collection::occtable::EprV7<Sigma>;
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};

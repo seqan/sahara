@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2006-2024, Knut Reinert & Freie Universität Berlin
+// SPDX-FileCopyrightText: 2016-2024, Knut Reinert & MPI für molekulare Genetik
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "AdaptiveKmerIndex.h"
 #include "utils/error_fmt.h"
 
 #include <cereal/types/array.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
-#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/occtable/all.h>
@@ -21,19 +25,19 @@ struct AdaptiveKmerIndex::Pimpl {
 
     // create kmer-index
     template <size_t Sigma>
-    using Index = fmindex_collection::FMIndex<fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>, fmindex_collection::DenseCSA>;
-    std::variant<Index<3>, Index<4>, Index<5>, Index<6>, Index<16>, Index<32>, Index<64>, Index<128>> index{Index<3>{fmindex_collection::cereal_tag{}}};
+    using Index = fmindex_collection::FMIndex<fmindex_collection::occtable::EprV7<Sigma>, fmindex_collection::DenseCSA>;
+    std::variant<Index<3>, Index<4>, Index<5>, Index<6>, Index<16>, Index<32>, Index<64>, Index<128>> index{Index<3>{}};
 
     void initIndex() {
         size_t maxValue = config.largestValue;
-        if (maxValue < 3) index = Index<3>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <   4) index = Index<  4>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <   5) index = Index<  5>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <   6) index = Index<  6>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <  16) index = Index< 16>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <  32) index = Index< 32>{fmindex_collection::cereal_tag{}};
-        else if (maxValue <  64) index = Index< 64>{fmindex_collection::cereal_tag{}};
-        else if (maxValue < 128) index = Index<128>{fmindex_collection::cereal_tag{}};
+        if (maxValue < 3) index = Index<3>{};
+        else if (maxValue <   4) index = Index<  4>{};
+        else if (maxValue <   5) index = Index<  5>{};
+        else if (maxValue <   6) index = Index<  6>{};
+        else if (maxValue <  16) index = Index< 16>{};
+        else if (maxValue <  32) index = Index< 32>{};
+        else if (maxValue <  64) index = Index< 64>{};
+        else if (maxValue < 128) index = Index<128>{};
     }
 };
 

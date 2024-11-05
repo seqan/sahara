@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2006-2024, Knut Reinert & Freie Universität Berlin
+// SPDX-FileCopyrightText: 2016-2024, Knut Reinert & MPI für molekulare Genetik
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "dr_dna.h"
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
@@ -6,7 +10,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -32,7 +36,7 @@ void app() {
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
-    using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
+    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
