@@ -5,7 +5,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
@@ -130,14 +130,14 @@ void runSearch() {
                    fwdQueries, bwdQueries);
     }
 
-    using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
-//    using Table = fmindex_collection::occtable::interleavedEPRV7::OccTable<Sigma>;
+    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
+//    using Table = fmindex_collection::occtable::EprV7<Sigma>;
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{fmindex_collection::cereal_tag{}};
+    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -158,7 +158,7 @@ void runSearch() {
             }
             throw error_fmt{"unknown search scheme generetaror \"{}\", valid generators are: {}", *cliGenerator, fmt::join(names, ", ")};
         }
-        return iter->second;
+        return iter->second.generator;
     }();
 
     auto loadSearchScheme = [&](int minK, int maxK) {
@@ -167,10 +167,10 @@ void runSearch() {
         if (!cliDynGenerator) {
             oss = search_schemes::expand(oss, len);
         } else {
-            oss = search_schemes::expandDynamic(oss, len, Sigma, index.size());
+            oss = search_schemes::expandByWNC(oss, len, Sigma, index.size());
         }
-        fmt::print("node count: {}\n", search_schemes::nodeCount(oss, Sigma));
-        fmt::print("expected node count: {}\n", search_schemes::expectedNodeCount(oss, Sigma, index.size()));
+        fmt::print("node count: {}\n", search_schemes::nodeCount</*Edit=*/true>(oss, Sigma));
+        fmt::print("expected node count: {}\n", search_schemes::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
         return oss;
     };
 

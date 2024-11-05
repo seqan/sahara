@@ -5,7 +5,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/DenseCSA.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -36,7 +36,7 @@ void createIndex() {
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
-    using Table = fmindex_collection::occtable::interleaved32::OccTable<Sigma>;
+    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
