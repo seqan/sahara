@@ -17,6 +17,9 @@ add_executable(sahara
     search.cpp
     uni-index.cpp
     uni-search.cpp
+    search_scheme.cpp
+    read_simulator.cpp
+    columba_prepare.cpp
 )
 
 target_link_libraries(sahara
