@@ -48,11 +48,11 @@ auto generateTIKZ(search_schemes::Search _s, int newLen, bool displayAlphabet, d
     std::string out;
     out += R"(
 \begin{tikzpicture}[scale=1.]
-\tikzstyle{node}=[fill=white, shape=circle, draw, minimum size=0.25cm,scale=2.];
-\tikzstyle{edge}=[left,scale=1.];
-\tikzstyle{medge}=[scale=1.];
-\tikzstyle{redge}=[right,scale=1.];
-\tikzstyle{bedge}=[below,scale=1.];
+\tikzstyle{node}=[fill=white, shape=circle, draw, minimum size=0.25cm,scale=2.]
+\tikzstyle{edge}=[left,scale=1.]
+\tikzstyle{medge}=[scale=1.]
+\tikzstyle{redge}=[right,scale=1.]
+\tikzstyle{bedge}=[below,scale=1.]
 )";
 
     out += fmt::format("\\node[node] (n)       at (0, 0) {{}};\n");
