@@ -39,7 +39,7 @@
     },
     {
       "name": "xxHash",
-      "version": "0.8.2",
+      "version": "0.8.3",
       "github_repository": "Cyan4973/xxHash",
       "download_only": true,
       "cmake_commands": [
