@@ -34,7 +34,7 @@ void app() {
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
-    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
+    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
@@ -67,7 +67,7 @@ void app() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmindex_collection::FMIndex<String, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("index creation", stopWatch.reset());
 

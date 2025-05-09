@@ -9,12 +9,10 @@
 
 #include <cereal/types/unordered_map.hpp>
 #include <clice/clice.h>
+#include <fmindex-collection/search_scheme/all.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
-#include <search_schemes/expand.h>
-#include <search_schemes/generator/all.h>
-#include <search_schemes/nodeCount.h>
 #include <unordered_set>
 
 namespace {

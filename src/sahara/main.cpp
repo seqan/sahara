@@ -12,8 +12,6 @@ auto cliHelp = clice::Argument { .args     = {"-h", "--help"},
 };
 }
 
-void slix_script_main(std::string script);
-
 int main(int argc, char** argv) {
     try {
         if (auto failed = clice::parse(argc, argv); failed) {

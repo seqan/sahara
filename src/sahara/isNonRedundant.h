@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <search_schemes/isComplete.h>
+#include <fmindex-collection/search_scheme/isComplete.h>
 
-namespace search_schemes {
+namespace fmindex_collection::search_schemes {
 
 namespace complete::detail {
 

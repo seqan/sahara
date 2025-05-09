@@ -4,11 +4,10 @@
 
 #include "error_fmt.h"
 #include "tikz.h"
-#include "isNonRedundant.h"
 
 #include <clice/clice.h>
-#include <search_schemes/search_schemes.h>
-
+#include <fmindex-collection/search/all.h>
+#include <fmindex-collection/search_scheme/isNonRedundant.h>
 
 namespace {
 void app();
@@ -73,8 +72,8 @@ auto cliTikz             = clice::Argument{ .parent = &cli,
 
 void printSingleScheme() {
     // pick the correct generator
-    auto iter = search_schemes::generator::all.find(*cliGenerator);
-    if (iter == search_schemes::generator::all.end()) {
+    auto iter = fmindex_collection::search_scheme::generator::all.find(*cliGenerator);
+    if (iter == fmindex_collection::search_scheme::generator::all.end()) {
         throw error_fmt{"can not find generator \"{}\"", *cliGenerator};
     }
     auto const& e = iter->second;
@@ -128,8 +127,8 @@ void printSingleScheme() {
 
 void printTikz(std::string const& path_prefix) {
     // pick the correct generator
-    auto iter = search_schemes::generator::all.find(*cliGenerator);
-    if (iter == search_schemes::generator::all.end()) {
+    auto iter = fmindex_collection::search_scheme::generator::all.find(*cliGenerator);
+    if (iter == fmindex_collection::search_scheme::generator::all.end()) {
         throw error_fmt{"can not find generator \"{}\"", *cliGenerator};
     }
     auto const& e = iter->second;
@@ -154,14 +153,14 @@ void printTable() {
 
     fmt::print("{:^15} | {:^6} {:^8} {:^6} {:^8} | {:^30} | {:^24}\n", "name", "parts", "searches", "valid", "complete", "non-redundant", "node count ham/edit", "weighted node count ham/edit");
     auto order = std::vector<std::string>{"backtracking", "optimum", "01*0", "01*0_opt", "pigeon", "pigeon_opt", "suffix", "h2-k1", "h2-k2", "h2-k3", "kianfar", "kucherov-k1", "kucherov-k2", "hato"};
-    for (auto const& [key, e] : search_schemes::generator::all) {
+    for (auto const& [key, e] : fmindex_collection::search_scheme::generator::all) {
         if (std::find(order.begin(), order.end(), key) == order.end()) {
             order.push_back(key);
             fmt::print("WARNING: missing {} in order list\n", key);
         }
     }
     for (auto const& o : order) {
-        if (auto iter = search_schemes::generator::all.find(o); iter == search_schemes::generator::all.end()) {
+        if (auto iter = fmindex_collection::search_scheme::generator::all.find(o); iter == fmindex_collection::search_scheme::generator::all.end()) {
             fmt::print("Warning: generator {} doesn't exists\n", o);
             continue;
         }
@@ -169,7 +168,7 @@ void printTable() {
         auto sigma = *cliAlphabetSize;
         auto N     = *cliReferenceLength;
 
-        auto const& e = search_schemes::generator::all[o];
+        auto const& e = fmindex_collection::search_scheme::generator::all[o];
         // generate search schemes
         auto sss = e.generator(*cliMinAllowedErrors, *cliMaxAllowedErrors, sigma, N);
 
@@ -210,7 +209,7 @@ void printTable() {
 
 void printColumba() {
     std::filesystem::create_directories(*cliColumba);
-    for (auto const& [key, e] : search_schemes::generator::all) {
+    for (auto const& [key, e] : fmindex_collection::search_scheme::generator::all) {
         std::filesystem::create_directories(*cliColumba / key);
 
         // print name
@@ -242,7 +241,7 @@ void printYaml() {
     fmt::print("reference length:    {}\n", *cliReferenceLength);
     fmt::print("---\n");
     for (auto k{*cliMinAllowedErrors}; k <= *cliMaxAllowedErrors; ++k) {
-        for (auto const& [key, e] : search_schemes::generator::all) {
+        for (auto const& [key, e] : fmindex_collection::search_scheme::generator::all) {
             // generate search schemes
             auto sss = e.generator(*cliMinAllowedErrors, k, *cliAlphabetSize, *cliReferenceLength);
 
@@ -254,7 +253,7 @@ void printYaml() {
             auto searches      = ss.size();
             auto valid         = isValid(sss);
             auto complete      = isComplete(sss, *cliMinAllowedErrors, k);
-            auto nodeCount     = search_schemes::nodeCount</*Edit=*/false>(ss, *cliAlphabetSize);
+            auto nodeCount     = fmindex_collection::search_scheme::nodeCount</*Edit=*/false>(ss, *cliAlphabetSize);
             auto weightedCount = weightedNodeCount</*Edit=*/false>(ss, *cliAlphabetSize, *cliReferenceLength);
             fmt::print("- name: \"{}\"\n", name);
             fmt::print("  parts: {}\n", parts);
@@ -275,7 +274,7 @@ void printYaml() {
 
 void app() {
     if (cliListGenerator) {
-        for (auto const& [key, e] : search_schemes::generator::all) {
+        for (auto const& [key, e] : fmindex_collection::search_scheme::generator::all) {
             fmt::print("{:>15} - {}\n", e.name, e.description);
         }
         return;

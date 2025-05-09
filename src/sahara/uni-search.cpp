@@ -9,16 +9,14 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
+#include <fmindex-collection/search/all.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
-#include <search_schemes/expand.h>
-#include <search_schemes/generator/all.h>
-#include <search_schemes/nodeCount.h>
 #include <string>
 #include <unordered_set>
 
@@ -98,14 +96,13 @@ void app() {
                    fwdQueries, bwdQueries);
     }
 
-    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
-//    using Table = fmindex_collection::occtable::EprV7<Sigma>;
+    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::FMIndex<Table, fmindex_collection::DenseCSA>{};
+    auto index = fmindex_collection::FMIndex<String, fmindex_collection::DenseCSA>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};

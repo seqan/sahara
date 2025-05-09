@@ -13,12 +13,10 @@
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
+#include <fmindex-collection/search_scheme/all.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
-#include <search_schemes/expand.h>
-#include <search_schemes/generator/all.h>
-#include <search_schemes/nodeCount.h>
 #include <string>
 #include <unordered_set>
 
@@ -134,14 +132,13 @@ void runSearch() {
                    fwdQueries, bwdQueries);
     }
 
-    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
-//    using Table = fmindex_collection::occtable::EprV7<Sigma>;
+    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{};
+    auto index = fmindex_collection::BiFMIndex<String, fmindex_collection::DenseCSA>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -154,10 +151,10 @@ void runSearch() {
     auto k = *cliNumErrors;
 
     auto generator = [&]() {
-        auto iter = search_schemes::generator::all.find(*cliGenerator);
-        if (iter == search_schemes::generator::all.end()) {
+        auto iter = search_scheme::generator::all.find(*cliGenerator);
+        if (iter == search_scheme::generator::all.end()) {
             auto names = std::vector<std::string>{};
-            for (auto const& [key, gen] : search_schemes::generator::all) {
+            for (auto const& [key, gen] : search_scheme::generator::all) {
                 names.push_back(key);
             }
             throw error_fmt{"unknown search scheme generetaror \"{}\", valid generators are: {}", *cliGenerator, fmt::join(names, ", ")};
@@ -169,12 +166,12 @@ void runSearch() {
         auto len = queries[0].size();
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
         if (!cliDynGenerator) {
-            oss = search_schemes::expand(oss, len);
+            oss = search_scheme::expand(oss, len);
         } else {
-            oss = search_schemes::expandByWNC(oss, len, Sigma, index.size());
+            oss = search_scheme::expandByWNC(oss, len, Sigma, index.size());
         }
-        fmt::print("node count: {}\n", search_schemes::nodeCount</*Edit=*/true>(oss, Sigma));
-        fmt::print("expected node count: {}\n", search_schemes::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+        fmt::print("node count: {}\n", search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
+        fmt::print("expected node count: {}\n", search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
         return oss;
     };
 

@@ -5,13 +5,13 @@
 #pragma once
 
 #include <cassert>
-#include <search_schemes/search_schemes.h>
+#include <fmindex-collection/search_scheme/all.h>
 #include <set>
 #include <unordered_set>
 #include <fmt/ranges.h>
 
 template <typename CB>
-void allErrorConfig(search_schemes::Search s, CB cb, std::vector<int>& errorConf, size_t minError, size_t maxStep) {
+void allErrorConfig(fmindex_collection::search_scheme::Search s, CB cb, std::vector<int>& errorConf, size_t minError, size_t maxStep) {
     auto l = errorConf.size();
     if (l == s.pi.size()) return;
 
@@ -26,12 +26,12 @@ void allErrorConfig(search_schemes::Search s, CB cb, std::vector<int>& errorConf
 }
 
 template <typename CB>
-void allErrorConfig(search_schemes::Search s, CB cb, int maxStep = std::numeric_limits<int>::max()) {
+void allErrorConfig(fmindex_collection::search_scheme::Search s, CB cb, int maxStep = std::numeric_limits<int>::max()) {
     auto errorConf = std::vector<int>{};
     allErrorConfig(s, cb, errorConf, 0, maxStep);
 }
 
-auto generateTIKZ(search_schemes::Search _s, int newLen, bool displayAlphabet, double fontSize, bool zeroIndex) -> std::string {
+auto generateTIKZ(fmindex_collection::search_scheme::Search _s, int newLen, bool displayAlphabet, double fontSize, bool zeroIndex) -> std::string {
     assert(isValid(_s));
     auto os = expand(_s, newLen);
     assert(os);
@@ -100,7 +100,7 @@ auto generateTIKZ(search_schemes::Search _s, int newLen, bool displayAlphabet, d
         }
     }, 1);
 
-    auto counts = search_schemes::expandCount(_s.pi.size(), s.pi.size());
+    auto counts = fmindex_collection::search_scheme::expandCount(_s.pi.size(), s.pi.size());
     int  accum  = 0;
     out += fmt::format("\\node[] (sl0) at (-1, 0) {{}};\n");
     for (size_t i{1}; i < counts.size(); ++i) {
