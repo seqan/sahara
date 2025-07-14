@@ -24,63 +24,73 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "rbi-search-dna4",
-                            .desc   = "search for a given pattern",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "rbi-search-dna4",
+    .desc   = "search for a given pattern",
+    .cb     = app,
 };
 
-auto cliQuery = clice::Argument{ .parent = &cli,
-                                 .args   = {"-q", "--query"},
-                                 .desc   = "path to a query file",
-                                 .value  = std::filesystem::path{},
+auto cliQuery = clice::Argument {
+    .parent = &cli,
+    .args   = {"-q", "--query"},
+    .desc   = "path to a query file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliIndex = clice::Argument{ .parent = &cli,
-                                 .args   = {"-i", "--index"},
-                                 .desc   = "path to the index file",
-                                 .value  = std::filesystem::path{},
+auto cliIndex = clice::Argument {
+    .parent = &cli,
+    .args   = {"-i", "--index"},
+    .desc   = "path to the index file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = {"-o", "--output"},
-                                  .desc   = "output path",
-                                  .value  = std::filesystem::path{"sahara-output.txt"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-o", "--output"},
+    .desc   = "output path",
+    .value  = std::filesystem::path{"sahara-output.txt"},
 };
 
 
-auto cliGenerator  = clice::Argument{ .parent = &cli,
-                                      .args   = {"-g", "--generator"},
-                                      .desc   = "picking optimum search scheme generator",
-                                      .value  = std::string{"h2-k2"},
+auto cliGenerator  = clice::Argument {
+    .parent = &cli,
+    .args   = {"-g", "--generator"},
+    .desc   = "picking optimum search scheme generator",
+    .value  = std::string{"h2-k2"},
 };
 
-auto cliDynGenerator = clice::Argument{ .parent = &cli,
-                                        .args   = "--dynamic_generator",
-                                        .desc   = "should generator run expand search scheme with dynamic extension",
+auto cliDynGenerator = clice::Argument {
+    .parent = &cli,
+    .args   = "--dynamic_generator",
+    .desc   = "should generator run expand search scheme with dynamic extension",
 };
 
-auto cliNumErrors = clice::Argument{ .parent = &cli,
-                                     .args   = {"-e", "--errors"},
-                                     .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
-                                     .value  = size_t{},
+auto cliNumErrors = clice::Argument {
+    .parent = &cli,
+    .args   = {"-e", "--errors"},
+    .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
+    .value  = size_t{},
 };
 
 enum class SearchMode { All, BestHits };
-auto cliSearchMode = clice::Argument{ .parent = &cli,
-                                      .args   = {"-m", "--search_mode"},
-                                      .desc   = "search mode, all (default) or besthits",
-                                      .value  = SearchMode::All,
-                                      .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
+auto cliSearchMode = clice::Argument {
+    .parent = &cli,
+    .args   = {"-m", "--search_mode"},
+    .desc   = "search mode, all (default) or besthits",
+    .value  = SearchMode::All,
+    .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
 };
-auto cliMaxHits   = clice::Argument{ .parent = &cli,
-                                     .args   = "--max_hits",
-                                     .desc   = "maximum number of hits per query",
-                                     .value  = 0,
+auto cliMaxHits   = clice::Argument {
+    .parent = &cli,
+    .args   = "--max_hits",
+    .desc   = "maximum number of hits per query",
+    .value  = 0,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
 void app() {

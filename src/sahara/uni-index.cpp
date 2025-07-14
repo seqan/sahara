@@ -17,15 +17,17 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "uni-index",
-                            .desc   = "construct an unidirectional index over a given input file",
-                            .value  = std::filesystem::path{},
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "uni-index",
+    .desc   = "construct an unidirectional index over a given input file",
+    .value  = std::filesystem::path{},
+    .cb     = app,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
 

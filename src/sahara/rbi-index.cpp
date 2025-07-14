@@ -19,15 +19,17 @@
 namespace {
 
 void app();
-auto cli = clice::Argument{ .args   = "rbi-index",
-                            .desc   = "construct an index over a given input file",
-                            .value  = std::filesystem::path{},
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "rbi-index",
+    .desc   = "construct an index over a given input file",
+    .value  = std::filesystem::path{},
+    .cb     = app,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nucleotides in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nucleotides in input data and replaces them with 'N'",
 };
 
 

@@ -17,20 +17,23 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "index",
-                            .desc   = "construct an index over a given input file",
-                            .value  = std::filesystem::path{},
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "index",
+    .desc   = "construct an index over a given input file",
+    .value  = std::filesystem::path{},
+    .cb     = app,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
-auto cliUseDna4 = clice::Argument{ .parent = &cli,
-                                   .args   = "--dna4",
-                                   .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
+auto cliUseDna4 = clice::Argument {
+    .parent = &cli,
+    .args   = "--dna4",
+    .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
 };
 
 

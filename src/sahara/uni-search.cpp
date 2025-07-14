@@ -22,33 +22,37 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "uni-search",
-                            .desc   = "search for a given pattern",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "uni-search",
+    .desc   = "search for a given pattern",
+    .cb     = app,
 };
 
-auto cliQuery = clice::Argument{ .parent = &cli,
-                                 .args   = {"-q", "--query"},
-                                 .desc   = "path to a query file",
-                                 .value  = std::filesystem::path{},
+auto cliQuery = clice::Argument {
+    .parent = &cli,
+    .args   = {"-q", "--query"},
+    .desc   = "path to a query file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliIndex = clice::Argument{ .parent = &cli,
-                                 .args   = {"-i", "--index"},
-                                 .desc   = "path to the index file",
-                                 .value  = std::filesystem::path{},
+auto cliIndex = clice::Argument {
+    .parent = &cli,
+    .args   = {"-i", "--index"},
+    .desc   = "path to the index file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = {"-o", "--output"},
-                                  .desc   = "output path",
-                                  .value  = std::filesystem::path{"sahara-output.txt"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-o", "--output"},
+    .desc   = "output path",
+    .value  = std::filesystem::path{"sahara-output.txt"},
 };
 
-
-auto cliNoReverse = clice::Argument{ .parent = &cli,
-                                     .args   = "--no-reverse",
-                                     .desc   = "do not search for reversed complements",
+auto cliNoReverse = clice::Argument {
+    .parent = &cli,
+    .args   = "--no-reverse",
+    .desc   = "do not search for reversed complements",
 };
 
 void app() {

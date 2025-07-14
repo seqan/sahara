@@ -3,25 +3,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <clice/clice.h>
-#include <fmt/format.h>
-
-namespace {
-auto cliHelp = clice::Argument { .args     = {"-h", "--help"},
-                                 .desc     = "prints the help page",
-                                 .cb       = []{ fmt::print("{}", clice::generateHelp()); exit(0); },
-};
-}
 
 int main(int argc, char** argv) {
-    try {
-        if (auto failed = clice::parse(argc, argv); failed) {
-            fmt::print(stderr, "parsing failed {}\n", *failed);
-            return 1;
-        }
-        if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
-            return 0;
-        }
-    } catch (std::exception const& e) {
-        fmt::print(stderr, "error {}\n", e.what());
-    }
+    clice::parse({
+        .args            = {argc, argv},
+        .desc            = "sahara - readmapper",
+        .allowDashCombi  = true, // default false, -a -b -> -ab
+        .helpOpt         = true, // default false, registers a --help option and generates help page
+        .catchExceptions = true, // default false, catches exceptions and prints them to the command line and exists with code 1
+    });
+    return 0;
 }

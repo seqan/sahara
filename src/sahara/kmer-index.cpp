@@ -15,40 +15,46 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "kmer-index",
-                            .desc   = "construct an index over a given input file",
-                            .value  = std::filesystem::path{},
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "kmer-index",
+    .desc   = "construct an index over a given input file",
+    .value  = std::filesystem::path{},
+    .cb     = app,
 };
 
-auto cliKmer = clice::Argument{ .parent = &cli,
-                                .args   = "--kmer",
-                                .desc   = "splitting the text into kmers",
-                                .value  = size_t{1}
+auto cliKmer = clice::Argument {
+    .parent = &cli,
+    .args   = "--kmer",
+    .desc   = "splitting the text into kmers",
+    .value  = size_t{1}
 };
 
-auto cliKmerMode = clice::Argument{ .parent = &cli,
-                                    .args   = "--kmer_mode",
-                                    .desc   = "valid modes are: winnowing and mod",
-                                    .value  = AdaptiveKmerIndex::KmerMode::Winnowing,
-                                    .mapping = {{{"winnowing", AdaptiveKmerIndex::KmerMode::Winnowing}, {"mod", AdaptiveKmerIndex::KmerMode::Mod}}},
+auto cliKmerMode = clice::Argument {
+    .parent = &cli,
+    .args   = "--kmer_mode",
+    .desc   = "valid modes are: winnowing and mod",
+    .value  = AdaptiveKmerIndex::KmerMode::Winnowing,
+    .mapping = {{{"winnowing", AdaptiveKmerIndex::KmerMode::Winnowing}, {"mod", AdaptiveKmerIndex::KmerMode::Mod}}},
 };
 
-auto cliWindow = clice::Argument{ .parent = &cli,
-                                .args   = "--window",
-                                .desc   = "using windows (only valid for '--kmer_mode winnowing' mode",
-                                .value  = size_t{1}
+auto cliWindow = clice::Argument {
+    .parent = &cli,
+    .args   = "--window",
+    .desc   = "using windows (only valid for '--kmer_mode winnowing' mode",
+    .value  = size_t{1}
 };
 
-auto cliMod = clice::Argument{ .parent = &cli,
-                               .args   = "--mod",
-                               .desc   = "take every 'mod' element (only valid for '--kmer_mode mod' mode",
-                               .value  = size_t{4}
+auto cliMod = clice::Argument {
+    .parent = &cli,
+    .args   = "--mod",
+    .desc   = "take every 'mod' element (only valid for '--kmer_mode mod' mode",
+    .value  = size_t{4}
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
 void app() {
