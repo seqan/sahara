@@ -31,3 +31,6 @@ target_link_libraries(sahara
     cereal::cereal
     xxhash
 )
+
+set_property(TARGET sahara PROPERTY CXX_STANDARD 20)
+set_property(TARGET sahara PROPERTY CXX_EXTENSIONS FALSE)

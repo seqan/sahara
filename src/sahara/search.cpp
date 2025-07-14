@@ -20,8 +20,6 @@
 #include <string>
 #include <unordered_set>
 
-using namespace fmindex_collection;
-
 namespace {
 void app();
 auto cli = clice::Argument{ .args   = "search",
@@ -132,13 +130,11 @@ void runSearch() {
                    fwdQueries, bwdQueries);
     }
 
-    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
-
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::BiFMIndex<String, fmindex_collection::DenseCSA>{};
+    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -151,10 +147,10 @@ void runSearch() {
     auto k = *cliNumErrors;
 
     auto generator = [&]() {
-        auto iter = search_scheme::generator::all.find(*cliGenerator);
-        if (iter == search_scheme::generator::all.end()) {
+        auto iter = fmc::search_scheme::generator::all.find(*cliGenerator);
+        if (iter == fmc::search_scheme::generator::all.end()) {
             auto names = std::vector<std::string>{};
-            for (auto const& [key, gen] : search_scheme::generator::all) {
+            for (auto const& [key, gen] : fmc::search_scheme::generator::all) {
                 names.push_back(key);
             }
             throw error_fmt{"unknown search scheme generetaror \"{}\", valid generators are: {}", *cliGenerator, fmt::join(names, ", ")};
@@ -166,16 +162,16 @@ void runSearch() {
         auto len = queries[0].size();
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
         if (!cliDynGenerator) {
-            oss = search_scheme::expand(oss, len);
+            oss = fmc::search_scheme::expand(oss, len);
         } else {
-            oss = search_scheme::expandByWNC(oss, len, Sigma, index.size());
+            oss = fmc::search_scheme::expandByWNC(oss, len, Sigma, index.size());
         }
-        fmt::print("node count: {}\n", search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
-        fmt::print("expected node count: {}\n", search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+        fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
+        fmt::print("expected node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
         return oss;
     };
 
-    auto resultCursors = std::vector<std::tuple<size_t, LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
@@ -183,8 +179,8 @@ void runSearch() {
         auto search_scheme  = loadSearchScheme(0, k);
         timing.emplace_back("searchScheme", stopWatch.reset());
 
-        if (*cliMaxHits == 0) search_ng21::search(index, queries, search_scheme, res_cb);
-        else                  search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
+        if (*cliMaxHits == 0) fmc::search_ng21::search(index, queries, search_scheme, res_cb);
+        else                  fmc::search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
     } else {
         auto search_schemes = std::vector<decltype(loadSearchScheme(0, k))>{};
         for (size_t j{0}; j<=k; ++j) {
@@ -192,15 +188,16 @@ void runSearch() {
         }
         timing.emplace_back("searchScheme", stopWatch.reset());
 
-        if (*cliMaxHits == 0) search_ng21::search_best(index, queries, search_schemes, res_cb);
-        else                  search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
+        if (*cliMaxHits == 0) fmc::search_ng21::search_best(index, queries, search_schemes, res_cb);
+        else                  fmc::search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
     }
     timing.emplace_back("search", stopWatch.reset());
 
     auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
-        for (auto [seqId, pos] : LocateLinear{index, cursor}) {
-            results.emplace_back(queryId, seqId, pos, e);
+        for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
+            auto [seqId, seqPos] = sae;
+            results.emplace_back(queryId, seqId, seqPos+offset, e);
         }
     }
 

@@ -40,7 +40,6 @@ void createIndex() {
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
-    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
@@ -82,7 +81,7 @@ void createIndex() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmindex_collection::BiFMIndex<String, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{ref, /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("index creation", stopWatch.reset());
 

@@ -11,7 +11,7 @@
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
-#include <fmindex-collection/string/PairedL0L1_NEPRV9.h>
+#include <fmindex-collection/string/PairedFlattenedBitvectors_L0L1.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fstream>
 #include <unordered_map>
@@ -25,7 +25,7 @@ struct AdaptiveKmerIndex::Pimpl {
 
     // create kmer-index
     template <size_t Sigma>
-    using Index = fmindex_collection::FMIndex<fmindex_collection::string::PairedL0L1_NEPRV9_512_64k<Sigma>, fmindex_collection::DenseCSA>;
+    using Index = fmc::FMIndex<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k>;
     std::variant<Index<3>, Index<4>, Index<5>, Index<6>, Index<16>, Index<32>, Index<64>, Index<128>> index{Index<3>{}};
 
     void initIndex() {
@@ -97,9 +97,10 @@ void AdaptiveKmerIndex::save(cereal::BinaryOutputArchive& archive) const {
 
 void AdaptiveKmerIndex::search(std::span<uint8_t const> _query, std::function<void(size_t refid, size_t refpos)> const& _report) const {
      std::visit([&](auto const& index) {
-        auto cursor = fmindex_collection::search_no_errors::search(index, _query);
-        for (auto [seqId, pos] : fmindex_collection::LocateLinear{index, cursor}) {
-            _report(seqId, pos);
+        auto cursor = fmc::search_no_errors::search(index, _query);
+        for (auto [e, offset] : fmc::LocateLinear{index, cursor}) {
+            auto [seqId, seqPos] = e;
+            _report(seqId, seqPos + offset);
         }
    }, pimpl->index);
 }

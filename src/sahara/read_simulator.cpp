@@ -70,7 +70,7 @@ auto cliErrorRandom        = clice::Argument{ .parent = &cli,
 auto cliSeed               = clice::Argument{ .parent = &cli,
                                               .args   = {"--seed"},
                                               .desc   = "seed to initialize the random generator",
-                                              .value  = (unsigned int){0},
+                                              .value  = uint32_t{0},
 };
 
 

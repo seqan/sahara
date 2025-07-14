@@ -6,7 +6,7 @@
 
 #include <fmindex-collection/search_scheme/isComplete.h>
 
-namespace fmindex_collection::search_schemes {
+namespace fmc::search_schemes {
 
 namespace complete::detail {
 

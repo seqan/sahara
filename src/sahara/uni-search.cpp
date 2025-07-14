@@ -20,8 +20,6 @@
 #include <string>
 #include <unordered_set>
 
-using namespace fmindex_collection;
-
 namespace {
 void app();
 auto cli = clice::Argument{ .args   = "uni-search",
@@ -96,13 +94,11 @@ void app() {
                    fwdQueries, bwdQueries);
     }
 
-    using String = fmindex_collection::string::InterleavedBitvector16<Sigma>;
-
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::FMIndex<String, fmindex_collection::DenseCSA>{};
+    auto index = fmc::FMIndex<Sigma, fmc::string::InterleavedBitvector16>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -111,10 +107,10 @@ void app() {
     timing.emplace_back("ld index", stopWatch.reset());
 
 
-    auto resultCursors = std::vector<std::tuple<size_t, FMIndexCursor<decltype(index)>>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, fmc::FMIndexCursor<decltype(index)>>>{};
     for (size_t qidx{0}; qidx < queries.size(); ++qidx) {
         auto const& query = queries[qidx];
-        auto cursor = fmindex_collection::search_no_errors::search(index, query);
+        auto cursor = fmc::search_no_errors::search(index, query);
         resultCursors.emplace_back(qidx, cursor);
     }
 
@@ -122,8 +118,9 @@ void app() {
 
     auto results = std::vector<std::tuple<size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor] : resultCursors) {
-        for (auto [seqId, pos] : LocateLinear{index, cursor}) {
-            results.emplace_back(queryId, seqId, pos);
+        for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
+            auto [seqId, seqPos] = sae;
+            results.emplace_back(queryId, seqId, seqPos + offset);
         }
     }
 
