@@ -17,57 +17,66 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "kmer-search",
-                            .desc   = "search for a given pattern",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "kmer-search",
+    .desc   = "search for a given pattern",
+    .cb     = app,
 };
 
-auto cliQuery = clice::Argument{ .parent = &cli,
-                                 .args   = "--query",
-                                 .desc   = "path to a query file",
-                                 .value  = std::filesystem::path{},
+auto cliQuery = clice::Argument {
+    .parent = &cli,
+    .args   = "--query",
+    .desc   = "path to a query file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliIndex = clice::Argument{ .parent = &cli,
-                                 .args   = "--index",
-                                 .desc   = "path to the index file",
-                                 .value  = std::filesystem::path{},
+auto cliIndex = clice::Argument {
+    .parent = &cli,
+    .args   = "--index",
+    .desc   = "path to the index file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = "--output",
-                                  .desc   = "output path",
-                                  .value  = std::filesystem::path{"sahara-output.txt"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = "--output",
+    .desc   = "output path",
+    .value  = std::filesystem::path{"sahara-output.txt"},
 };
 
 
-auto cliGenerator  = clice::Argument{ .parent = &cli,
-                                      .args   = "--generator",
-                                      .desc   = "picking optimum search scheme generator",
-                                      .value  = std::string{"h2-k2"},
+auto cliGenerator  = clice::Argument {
+    .parent = &cli,
+    .args   = "--generator",
+    .desc   = "picking optimum search scheme generator",
+    .value  = std::string{"h2-k2"},
 };
 
-auto cliDynGenerator = clice::Argument{ .parent = &cli,
-                                        .args   = "--dynamic_generator",
-                                        .desc   = "should generator run expand search scheme with dynamic extension",
+auto cliDynGenerator = clice::Argument {
+    .parent = &cli,
+    .args   = "--dynamic_generator",
+    .desc   = "should generator run expand search scheme with dynamic extension",
 };
 
-auto cliNoReverse = clice::Argument{ .parent = &cli,
-                                     .args   = "--no-reverse",
-                                     .desc   = "do not search for reversed complements",
+auto cliNoReverse = clice::Argument {
+    .parent = &cli,
+    .args   = "--no-reverse",
+    .desc   = "do not search for reversed complements",
 };
 
 enum class SearchMode { All, BestHits };
-auto cliSearchMode = clice::Argument{ .parent = &cli,
-                                      .args   = "--search_mode",
-                                      .desc   = "do not search for reversed complements",
-                                      .value  = SearchMode::All,
-                                      .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
+auto cliSearchMode = clice::Argument {
+    .parent = &cli,
+    .args   = "--search_mode",
+    .desc   = "do not search for reversed complements",
+    .value  = SearchMode::All,
+    .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
 };
-auto cliMaxHits   = clice::Argument{ .parent = &cli,
-                                     .args   = "--max_hits",
-                                     .desc   = "maximum number of hits per query",
-                                     .value  = 0,
+auto cliMaxHits   = clice::Argument {
+    .parent = &cli,
+    .args   = "--max_hits",
+    .desc   = "maximum number of hits per query",
+    .value  = 0,
 };
 
 void app() {
