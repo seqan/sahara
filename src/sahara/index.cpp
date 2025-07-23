@@ -17,20 +17,23 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "index",
-                            .desc   = "construct an index over a given input file",
-                            .value  = std::filesystem::path{},
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "index",
+    .desc   = "construct an index over a given input file",
+    .value  = std::filesystem::path{},
+    .cb     = app,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
-auto cliUseDna4 = clice::Argument{ .parent = &cli,
-                                   .args   = "--dna4",
-                                   .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
+auto cliUseDna4 = clice::Argument {
+    .parent = &cli,
+    .args   = "--dna4",
+    .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
 };
 
 
@@ -40,7 +43,6 @@ void createIndex() {
     constexpr size_t Sigma = Alphabet::size();
 
     fmt::print("constructing an index for {}\n", *cli);
-    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
 
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
@@ -82,7 +84,7 @@ void createIndex() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmindex_collection::BiFMIndex<Table, fmindex_collection::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{ref, /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("index creation", stopWatch.reset());
 

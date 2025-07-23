@@ -11,66 +11,77 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "read_simulator",
-                            .desc   = "simulates reads of a certain length",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "read_simulator",
+    .desc   = "simulates reads of a certain length",
+    .cb     = app,
 };
 
-auto cliInput = clice::Argument{ .parent = &cli,
-                                 .args   = {"-i", "--input"},
-                                 .desc   = "path to a fasta file",
-                                 .value  = std::filesystem::path{},
+auto cliInput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-i", "--input"},
+    .desc   = "path to a fasta file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = {"-o", "--output"},
-                                  .desc   = "path to the output fasta file",
-                                  .value  = std::filesystem::path{},
-                                  .tags   = {"required"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-o", "--output"},
+    .desc   = "path to the output fasta file",
+    .value  = std::filesystem::path{},
+    .tags   = {"required"},
 };
 
-auto cliFastaLineLength = clice::Argument{ .parent = &cli,
-                                           .args   = {"--fasta_line_length"},
-                                           .desc   = "How long should each fasta line be (0: infinite)",
-                                           .value  = size_t{80},
+auto cliFastaLineLength = clice::Argument {
+    .parent = &cli,
+    .args   = {"--fasta_line_length"},
+    .desc   = "How long should each fasta line be (0: infinite)",
+    .value  = size_t{80},
 };
 
-auto cliReadLength = clice::Argument{ .parent = &cli,
-                                      .args   = {"-l", "--read_length"},
-                                      .desc   = "length of the simulated reads",
-                                      .value  = size_t{150},
+auto cliReadLength = clice::Argument {
+    .parent = &cli,
+    .args   = {"-l", "--read_length"},
+    .desc   = "length of the simulated reads",
+    .value  = size_t{150},
 };
 
-auto cliNumberOfReads = clice::Argument{ .parent = &cli,
-                                         .args   = {"-n", "--number_of_reads"},
-                                         .desc   = "number of reads to simulate",
-                                         .value  = size_t{1000},
+auto cliNumberOfReads = clice::Argument {
+    .parent = &cli,
+    .args   = {"-n", "--number_of_reads"},
+    .desc   = "number of reads to simulate",
+    .value  = size_t{1000},
 };
-auto cliErrorSubstitutions = clice::Argument{ .parent = &cli,
-                                              .args   = {"--substitution_errors"},
-                                              .desc   = "number of substitution errors per read",
-                                              .value  = size_t{0},
+auto cliErrorSubstitutions = clice::Argument {
+    .parent = &cli,
+    .args   = {"--substitution_errors"},
+    .desc   = "number of substitution errors per read",
+    .value  = size_t{0},
 };
-auto cliErrorInsertions    = clice::Argument{ .parent = &cli,
-                                              .args   = {"--insertion_errors"},
-                                              .desc   = "number of insert errors per read",
-                                              .value  = size_t{0},
+auto cliErrorInsertions    = clice::Argument {
+    .parent = &cli,
+    .args   = {"--insertion_errors"},
+    .desc   = "number of insert errors per read",
+    .value  = size_t{0},
 };
-auto cliErrorDeletions     = clice::Argument{ .parent = &cli,
-                                              .args   = {"--deletion_errors"},
-                                              .desc   = "number of deletion errors per read",
-                                              .value  = size_t{0},
+auto cliErrorDeletions     = clice::Argument {
+    .parent = &cli,
+    .args   = {"--deletion_errors"},
+    .desc   = "number of deletion errors per read",
+    .value  = size_t{0},
 };
-auto cliErrorRandom        = clice::Argument{ .parent = &cli,
-                                              .args   = {"-e", "--errors"},
-                                              .desc   = "number of errors (randomly chosen S, I or D)",
-                                              .value  = size_t{0},
+auto cliErrorRandom        = clice::Argument {
+    .parent = &cli,
+    .args   = {"-e", "--errors"},
+    .desc   = "number of errors (randomly chosen S, I or D)",
+    .value  = size_t{0},
 };
 
-auto cliSeed               = clice::Argument{ .parent = &cli,
-                                              .args   = {"--seed"},
-                                              .desc   = "seed to initialize the random generator",
-                                              .value  = (unsigned int){0},
+auto cliSeed               = clice::Argument {
+    .parent = &cli,
+    .args   = {"--seed"},
+    .desc   = "seed to initialize the random generator",
+    .value  = uint32_t{0},
 };
 
 

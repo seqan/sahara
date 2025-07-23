@@ -11,80 +11,86 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
-#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
+#include <fmindex-collection/search_scheme/all.h>
+#include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
-#include <search_schemes/expand.h>
-#include <search_schemes/generator/all.h>
-#include <search_schemes/nodeCount.h>
 #include <string>
 #include <unordered_set>
 
-using namespace fmindex_collection;
-
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "rbi-search-dna4",
-                            .desc   = "search for a given pattern",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "rbi-search-dna4",
+    .desc   = "search for a given pattern",
+    .cb     = app,
 };
 
-auto cliQuery = clice::Argument{ .parent = &cli,
-                                 .args   = {"-q", "--query"},
-                                 .desc   = "path to a query file",
-                                 .value  = std::filesystem::path{},
+auto cliQuery = clice::Argument {
+    .parent = &cli,
+    .args   = {"-q", "--query"},
+    .desc   = "path to a query file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliIndex = clice::Argument{ .parent = &cli,
-                                 .args   = {"-i", "--index"},
-                                 .desc   = "path to the index file",
-                                 .value  = std::filesystem::path{},
+auto cliIndex = clice::Argument {
+    .parent = &cli,
+    .args   = {"-i", "--index"},
+    .desc   = "path to the index file",
+    .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = {"-o", "--output"},
-                                  .desc   = "output path",
-                                  .value  = std::filesystem::path{"sahara-output.txt"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-o", "--output"},
+    .desc   = "output path",
+    .value  = std::filesystem::path{"sahara-output.txt"},
 };
 
 
-auto cliGenerator  = clice::Argument{ .parent = &cli,
-                                      .args   = {"-g", "--generator"},
-                                      .desc   = "picking optimum search scheme generator",
-                                      .value  = std::string{"h2-k2"},
+auto cliGenerator  = clice::Argument {
+    .parent = &cli,
+    .args   = {"-g", "--generator"},
+    .desc   = "picking optimum search scheme generator",
+    .value  = std::string{"h2-k2"},
 };
 
-auto cliDynGenerator = clice::Argument{ .parent = &cli,
-                                        .args   = "--dynamic_generator",
-                                        .desc   = "should generator run expand search scheme with dynamic extension",
+auto cliDynGenerator = clice::Argument {
+    .parent = &cli,
+    .args   = "--dynamic_generator",
+    .desc   = "should generator run expand search scheme with dynamic extension",
 };
 
-auto cliNumErrors = clice::Argument{ .parent = &cli,
-                                     .args   = {"-e", "--errors"},
-                                     .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
-                                     .value  = size_t{},
+auto cliNumErrors = clice::Argument {
+    .parent = &cli,
+    .args   = {"-e", "--errors"},
+    .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
+    .value  = size_t{},
 };
 
 enum class SearchMode { All, BestHits };
-auto cliSearchMode = clice::Argument{ .parent = &cli,
-                                      .args   = {"-m", "--search_mode"},
-                                      .desc   = "search mode, all (default) or besthits",
-                                      .value  = SearchMode::All,
-                                      .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
+auto cliSearchMode = clice::Argument {
+    .parent = &cli,
+    .args   = {"-m", "--search_mode"},
+    .desc   = "search mode, all (default) or besthits",
+    .value  = SearchMode::All,
+    .mapping = {{{"all", SearchMode::All}, {"besthits", SearchMode::BestHits}}},
 };
-auto cliMaxHits   = clice::Argument{ .parent = &cli,
-                                     .args   = "--max_hits",
-                                     .desc   = "maximum number of hits per query",
-                                     .value  = 0,
+auto cliMaxHits   = clice::Argument {
+    .parent = &cli,
+    .args   = "--max_hits",
+    .desc   = "maximum number of hits per query",
+    .value  = 0,
 };
 
-auto cliIgnoreUnknown = clice::Argument{ .parent = &cli,
-                                         .args   = "--ignore_unknown",
-                                         .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
+auto cliIgnoreUnknown = clice::Argument {
+    .parent = &cli,
+    .args   = "--ignore_unknown",
+    .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
 void app() {
@@ -138,14 +144,13 @@ void app() {
                    fwdQueries);
     }
 
-    using Table = fmindex_collection::occtable::Interleaved_32<Sigma>;
-//    using Table = fmindex_collection::occtable::EprV7<Sigma>;
+    using String = fmc::string::InterleavedBitvector16<Sigma>;
 
     if (!std::filesystem::exists(*cliIndex)) {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmindex_collection::RBiFMIndex<Table, fmindex_collection::DenseCSA>{};
+    auto index = fmc::MirroredBiFMIndex<String, fmc::DenseCSA>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -156,8 +161,8 @@ void app() {
     auto k = *cliNumErrors;
 
     auto generator = [&]() {
-        auto iter = search_schemes::generator::all.find(*cliGenerator);
-        if (iter == search_schemes::generator::all.end()) {
+        auto iter = fmc::search_scheme::generator::all.find(*cliGenerator);
+        if (iter == fmc::search_scheme::generator::all.end()) {
             throw error_fmt{"unknown search scheme generetaror \"{}\"", *cliGenerator};
         }
         return iter->second.generator;
@@ -167,16 +172,16 @@ void app() {
         auto len = queries[0].size();
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
         if (!cliDynGenerator) {
-            oss = search_schemes::expand(oss, len);
+            oss = fmc::search_scheme::expand(oss, len);
         } else {
-            oss = search_schemes::expandByWNC(oss, len, Sigma, index.size());
+            oss = fmc::search_scheme::expandByWNC(oss, len, Sigma, index.size());
         }
-        fmt::print("node count: {}\n", search_schemes::nodeCount</*Edit=*/true>(oss, Sigma));
-        fmt::print("expected node count: {}\n", search_schemes::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+        fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
+        fmt::print("expected node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
         return oss;
     };
 
-    auto resultCursors = std::vector<std::tuple<size_t, LeftRBiFMIndexCursor<decltype(index)>, size_t>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftMirroredBiFMIndexCursor<decltype(index)>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
@@ -184,8 +189,8 @@ void app() {
         auto search_scheme  = loadSearchScheme(0, k);
         timing.emplace_back("searchScheme", stopWatch.reset());
 
-        if (*cliMaxHits == 0) search_ng21::search(index, queries, search_scheme, res_cb);
-        else                  search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
+        if (*cliMaxHits == 0) fmc::search_ng21::search(index, queries, search_scheme, res_cb);
+        else                  fmc::search_ng21::search_n(index, queries, search_scheme, *cliMaxHits, res_cb);
     } else {
         auto search_schemes = std::vector<decltype(loadSearchScheme(0, k))>{};
         for (size_t j{0}; j<=k; ++j) {
@@ -193,15 +198,16 @@ void app() {
         }
         timing.emplace_back("searchScheme", stopWatch.reset());
 
-        if (*cliMaxHits == 0) search_ng21::search_best(index, queries, search_schemes, res_cb);
-        else                  search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
+        if (*cliMaxHits == 0) fmc::search_ng21::search_best(index, queries, search_schemes, res_cb);
+        else                  fmc::search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
     }
     timing.emplace_back("search", stopWatch.reset());
 
     auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
-        for (auto [seqId, pos] : LocateLinear{index, cursor}) {
-            results.emplace_back(queryId, seqId, pos, e);
+        for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
+            auto [seqId, seqPos] = sae;
+            results.emplace_back(queryId, seqId, seqPos + offset, e);
         }
     }
 

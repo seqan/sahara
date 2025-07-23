@@ -10,23 +10,26 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "columba_prepare",
-                            .desc   = "takes a fasta file and prepares it for columba",
-                            .cb     = app,
+auto cli = clice::Argument {
+    .args   = "columba_prepare",
+    .desc   = "takes a fasta file and prepares it for columba",
+    .cb     = app,
 };
 
-auto cliInput = clice::Argument{ .parent = &cli,
-                                 .args   = {"-i", "--input"},
-                                 .desc   = "path to a fasta file",
-                                 .value  = std::filesystem::path{},
-                                 .tags   = {"required"},
+auto cliInput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-i", "--input"},
+    .desc   = "path to a fasta file",
+    .value  = std::filesystem::path{},
+    .tags   = {"required"},
 };
 
-auto cliOutput = clice::Argument{ .parent = &cli,
-                                  .args   = {"-o", "--output"},
-                                  .desc   = "base path (without extensions)",
-                                  .value  = std::string{},
-                                  .tags   = {"required"},
+auto cliOutput = clice::Argument {
+    .parent = &cli,
+    .args   = {"-o", "--output"},
+    .desc   = "base path (without extensions)",
+    .value  = std::string{},
+    .tags   = {"required"},
 };
 
 char randomPick() {

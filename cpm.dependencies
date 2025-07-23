@@ -3,9 +3,9 @@
   "packages": [
     {
       "name": "fmt",
-      "version": "11.0.2.1",
+      "version": "11.2.0",
       "github_repository": "fmtlib/fmt",
-      "git_tag": "cc2ba8f9ede4e5ae3262f43f3e4d07a22a9acdfc"
+      "git_tag": "{VERSION}",
     },
     {
       "name": "cereal",
@@ -19,22 +19,22 @@
     },
     {
       "name": "fmindex-collection",
-      "version": "0.4.3",
-      "github_repository": "SGSSGene/fmindex-collection"
+      "version": "1.1.0",
+      "github_repository": "SGSSGene/fmindex-collection",
     },
     {
       "name": "clice",
-      "version": "1.0.1",
-      "github_repository": "SGSSGene/clice"
+      "version": "1.3.6",
+      "github_repository": "SGSSGene/clice",
     },
     {
       "name": "ivio",
-      "version": "0.4.3",
+      "version": "1.1.1",
       "github_repository": "iv-project/IVio"
     },
     {
       "name": "ivsigma",
-      "version": "0.3.1",
+      "version": "0.4.1",
       "github_repository": "iv-project/IVSigma"
     },
     {
