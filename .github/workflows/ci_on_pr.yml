@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Standard IV-project testing
-        uses: iv-project/IVaction@v10.9
+        uses: iv-project/IVaction@v10.13
         with:
           compiler: ${{ matrix.compiler }}
           threads: 2
