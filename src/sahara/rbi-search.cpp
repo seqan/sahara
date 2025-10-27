@@ -135,7 +135,8 @@ void app() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmc::MirroredBiFMIndex<fmc::string::InterleavedBitvector16<Sigma>>{};
+    using Index = fmc::BiFMIndex<Sigma>::ReuseRev;
+    auto index = Index{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -166,7 +167,7 @@ void app() {
         return oss;
     };
 
-    auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftMirroredBiFMIndexCursor<decltype(index)>, size_t>>{};
+    auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<Index>, size_t>>{};
     auto res_cb = [&](size_t queryId, auto cursor, size_t errors) {
         resultCursors.emplace_back(queryId, cursor, errors);
     };

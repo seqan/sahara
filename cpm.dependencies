@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "fmt",
-      "version": "11.2.0",
+      "version": "12.0.0",
       "github_repository": "fmtlib/fmt",
       "git_tag": "{VERSION}",
     },
@@ -19,8 +19,9 @@
     },
     {
       "name": "fmindex-collection",
-      "version": "1.1.0",
+      "version": "1.1.0-dirty",
       "github_repository": "SGSSGene/fmindex-collection",
+      "git_tag": "ec16aa3f85ac4ee54921bd8490205055b7a7fd86",
     },
     {
       "name": "clice",
@@ -34,7 +35,7 @@
     },
     {
       "name": "ivsigma",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "github_repository": "iv-project/IVSigma"
     },
     {

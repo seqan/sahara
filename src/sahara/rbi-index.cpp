@@ -39,8 +39,6 @@ void app() {
 
     fmt::print("constructing an index for {}\n", *cli);
 
-    using String = fmc::string::InterleavedBitvector16<Sigma>;
-
     auto timing = std::vector<std::tuple<std::string, double>>{};
     auto stopWatch = StopWatch();
 
@@ -73,7 +71,7 @@ void app() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmc::MirroredBiFMIndex<String, fmc::DenseCSA>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmc::BiFMIndex<Sigma>::ReuseRev{ref, /*samplingRate*/16, /*threadNbr*/1};
 
     timing.emplace_back("index creation", stopWatch.reset());
 

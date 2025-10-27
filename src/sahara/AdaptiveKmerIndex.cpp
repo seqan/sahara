@@ -11,7 +11,7 @@
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
-#include <fmindex-collection/string/PairedFlattenedBitvectors_L0L1.h>
+#include <fmindex-collection/string/PairedFlattenedBitvectors2L.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fstream>
 #include <unordered_map>
