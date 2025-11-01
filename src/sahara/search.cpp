@@ -11,6 +11,7 @@
 #include <clice/clice.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
+#include <fmindex-collection/search/SearchNg26.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -159,7 +160,9 @@ void runSearch() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{};
+//    auto index = fmc::BiFMIndex<Sigma/*, fmc::string::InterleavedBitvectorPrefix16*/>{};
+    auto index = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>{};
+
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -211,6 +214,32 @@ void runSearch() {
         return oss;
     };
 
+    auto loadSearchSchemeUsePartition = [&](int minK, int maxK, bool edit) {
+        auto len       = queries[0].size();
+        auto oss       = generator(minK, maxK, /*unused*/0, /*unused*/0);
+        auto partition = fmc::search_scheme::createUniformPartition(oss, queries[0].size());
+        if (edit) {
+            if (!cliDynGenerator) {
+            } else {
+                partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, index.size(), 1);
+                fmt::print("partition: {}\n", partition);
+            }
+            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+        } else {
+            if (!cliDynGenerator) {
+            } else {
+                partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, index.size(), 1);
+                fmt::print("partition: {}\n", partition);
+            }
+            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss, Sigma));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, index.size()));
+
+        }
+        return std::make_tuple(oss, partition);
+    };
+
+
     auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
 
 
@@ -219,25 +248,24 @@ void runSearch() {
         resultCursors.emplace_back(queryId, cursor, errors);
     };
     if (*cliSearchMode == SearchMode::All) {
-        auto search_scheme  = loadSearchScheme(0, k, Edit);
+        auto [search_scheme, partition]  = loadSearchSchemeUsePartition(0, k, Edit);
         timing.emplace_back("searchScheme", stopWatch.reset());
 
         if (!Edit) {
-            search_scheme = limitToHamming(search_scheme);
-            if (*cliMaxHits == 0) fmc::search_ng24::search<false>  (index, queries, search_scheme, res_cb);
-            else                  fmc::search_ng24::search_n<false>(index, queries, search_scheme, *cliMaxHits, res_cb);
+            if (*cliMaxHits == 0) fmc::search_ng26::search<false>(index, queries, search_scheme, partition, res_cb);
+            else                  fmc::search_ng26::search<false>(index, queries, search_scheme, partition, res_cb, *cliMaxHits);
         } else {
-            if (*cliMaxHits == 0) fmc::search_ng24::search<true>  (index, queries, search_scheme, res_cb);
-            else                  fmc::search_ng24::search_n<true>(index, queries, search_scheme, *cliMaxHits, res_cb);
+            if (*cliMaxHits == 0) fmc::search_ng26::search<true>(index, queries, search_scheme, partition, res_cb);
+            else                  fmc::search_ng26::search<true>(index, queries, search_scheme, partition, res_cb, *cliMaxHits);
         }
     } else {
-        auto search_schemes = std::vector<decltype(loadSearchScheme(0, k, Edit))>{};
+        auto search_schemes = std::vector<decltype(loadSearchSchemeUsePartition(0, k, Edit))>{};
         for (size_t j{0}; j<=k; ++j) {
-            search_schemes.emplace_back(loadSearchScheme(j, j, Edit));
+            search_schemes.emplace_back(loadSearchSchemeUsePartition(j, j, Edit));
         }
         timing.emplace_back("searchScheme", stopWatch.reset());
-        if (*cliMaxHits == 0) fmc::search_ng21::search_best  (index, queries, search_schemes, res_cb);
-        else                  fmc::search_ng21::search_best_n(index, queries, search_schemes, *cliMaxHits, res_cb);
+        if (*cliMaxHits == 0) fmc::search_ng26::search_best(index, queries, search_schemes, res_cb);
+        else                  fmc::search_ng26::search_best(index, queries, search_schemes, res_cb, *cliMaxHits);
     }
     timing.emplace_back("search", stopWatch.reset());
 

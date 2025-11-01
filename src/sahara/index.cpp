@@ -84,7 +84,9 @@ void createIndex() {
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{ref, /*samplingRate*/16, /*threadNbr*/1};
+//    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{ref, /*samplingRate*/16, /*threadNbr*/1};
+    auto index = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>{ref, /*samplingRate*/16, /*threadNbr*/1};
+
 
     timing.emplace_back("index creation", stopWatch.reset());
 
