@@ -357,17 +357,19 @@ void runSearch() {
 void app() {
     // load sigma value
     size_t sigma;
+    std::string indexType;
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
         archive(sigma);
+        size_t samplingRate;
+        archive(samplingRate);
+        archive(indexType);
     }
-    if (sigma == 5) {
-        runSearch<ivs::d_dna4>();
-    } else if (sigma == 6) {
-        runSearch<ivs::d_dna5>();
-    } else {
-        throw error_fmt{"unknown index with {} letters", sigma};
-    }
+    if (sigma == 4 && indexType.ends_with("-nd")) runSearch<ivs::dna4>();
+    else if (sigma == 5 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna4>();
+    else if (sigma == 5 &&  indexType.ends_with("-nd")) runSearch<ivs::dna5>();
+    else if (sigma == 6 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna5>();
+    else throw error_fmt{"unknown index with {} letters, index type {}", sigma, indexType};
 }
 }

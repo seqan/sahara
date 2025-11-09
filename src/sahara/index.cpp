@@ -42,6 +42,11 @@ auto cliIndexType = clice::Argument {
         {"fbv512_64", "fbv512_64"},
     }},
 };
+auto cliIndexNoDelim = clice::Argument {
+    .parent = &cliIndexType,
+    .args   = "--no-delim",
+    .desc   = "index type can also be build without delimiter, this introduces a false positives but decreases the alphabet size",
+};
 
 auto cliUseDna4 = clice::Argument {
     .parent = &cli,
@@ -106,18 +111,23 @@ void createIndex() {
     fmt::print("  totalSize: {}\n", totalSize);
     fmt::print("  threads: {}\n", *cliThreads);
     fmt::print("  samplingRate: {}\n", *cliSamplingRate);
+    fmt::print("  index type: {}\n", *cliIndexType);
+    fmt::print("    use delimiter: {}\n", static_cast<bool>(cliIndexNoDelim));
 
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
     auto index = VarIndex<Sigma>{};
     auto indexType = *cliIndexType;
+    if (cliIndexNoDelim) {
+        indexType += "-nd";
+    }
     index.emplace(indexType, ref, *cliSamplingRate, *cliThreads);
 
     timing.emplace_back("index creation", stopWatch.reset());
 
     // save index
-    auto indexPath = std::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
+    auto indexPath = fmt::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
     archive(Sigma);
@@ -137,10 +147,9 @@ void createIndex() {
 }
 
 void app() {
-    if (cliUseDna4) {
-        createIndex<ivs::d_dna4>();
-    } else {
-        createIndex<ivs::d_dna5>();
-    }
+    if      (cliUseDna4 && cliIndexNoDelim)  createIndex<ivs::dna4>();
+    else if (cliUseDna4 && !cliIndexNoDelim) createIndex<ivs::d_dna4>();
+    else if (cliIndexNoDelim)                createIndex<ivs::dna5>();
+    else                                     createIndex<ivs::d_dna5>();
 }
 }
