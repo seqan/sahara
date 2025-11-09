@@ -366,7 +366,9 @@ void app() {
         archive(samplingRate);
         archive(indexType);
     }
-    if (sigma == 4 && indexType.ends_with("-nd")) runSearch<ivs::dna4>();
+    if (sigma == 2 && indexType.ends_with("-nd")) runSearch<ivs::dna2>();
+    else if (sigma == 3 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna2>();
+    else if (sigma == 4 && indexType.ends_with("-nd")) runSearch<ivs::dna4>();
     else if (sigma == 5 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna4>();
     else if (sigma == 5 &&  indexType.ends_with("-nd")) runSearch<ivs::dna5>();
     else if (sigma == 6 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna5>();

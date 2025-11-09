@@ -42,6 +42,7 @@ auto cliIndexType = clice::Argument {
         {"fbv512_64", "fbv512_64"},
     }},
 };
+
 auto cliIndexNoDelim = clice::Argument {
     .parent = &cliIndexType,
     .args   = "--no-delim",
@@ -53,6 +54,13 @@ auto cliUseDna4 = clice::Argument {
     .args   = "--dna4",
     .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
 };
+
+auto cliUseDna2 = clice::Argument {
+    .parent = &cli,
+    .args   = "--dna2",
+    .desc   = "use dna 2 alphabet, replace 'N' with random ACG or T and reduce AT->S and CG->W",
+};
+
 
 auto cliThreads = clice::Argument {
     .parent = &cli,
@@ -83,7 +91,12 @@ void createIndex() {
         totalSize += record.seq.size();
         ref.emplace_back(ivs::convert_char_to_rank<Alphabet>(record.seq));
         if (cliIgnoreUnknown) {
-            if (cliUseDna4) {
+            if (cliUseDna2) {
+                for (auto& v : ref.back()) {
+                    if (ivs::verify_rank(v)) continue;
+                    v = Alphabet::char_to_rank('S') + rand() % 2;
+                }
+            } else if (cliUseDna4) {
                 for (auto& v : ref.back()) {
                     if (ivs::verify_rank(v)) continue;
                     v = Alphabet::char_to_rank('A') + rand() % 4;
@@ -147,7 +160,9 @@ void createIndex() {
 }
 
 void app() {
-    if      (cliUseDna4 && cliIndexNoDelim)  createIndex<ivs::dna4>();
+    if      (cliUseDna2 && cliIndexNoDelim)  createIndex<ivs::dna2>();
+    else if (cliUseDna2 && !cliIndexNoDelim) createIndex<ivs::d_dna2>();
+    else if (cliUseDna4 && cliIndexNoDelim)  createIndex<ivs::dna4>();
     else if (cliUseDna4 && !cliIndexNoDelim) createIndex<ivs::d_dna4>();
     else if (cliIndexNoDelim)                createIndex<ivs::dna5>();
     else                                     createIndex<ivs::d_dna5>();

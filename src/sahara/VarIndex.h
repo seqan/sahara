@@ -45,3 +45,37 @@ struct VarIndex {
     }
 };
 
+template <>
+struct VarIndex<2> {
+    static constexpr size_t Sigma = 2;
+    std::string type;
+    using Vs = std::variant<
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma>::NoDelim
+    >;
+    Vs vs;
+
+    template <typename Archive>
+    void save(Archive& ar) const {
+        ar(type);
+        std::visit([&](auto const& v) {
+            ar(v);
+        }, vs);
+    }
+    template <typename... Args>
+    void emplace(std::string _type, Args&&... args) {
+        type = _type;
+        if (type == "fbv64_64-nd")  vs = std::variant_alternative_t<0, Vs>{std::forward<Args>(args)...};
+        else if (type == "fbv512_64-nd") vs = std::variant_alternative_t<1, Vs>{std::forward<Args>(args)...};
+        else throw std::runtime_error{"unknown index type"};
+    }
+    template <typename Archive>
+    void load(Archive& ar) {
+        ar(type);
+        emplace(type);
+        std::visit([&](auto& v) {
+            ar(v);
+        }, vs);
+    }
+};
+
