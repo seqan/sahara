@@ -174,7 +174,7 @@ void runSearch() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto varIndex = VarIndex<Sigma>{};
+    auto varIndex = VarIndex<Alphabet>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
@@ -324,8 +324,19 @@ void runSearch() {
         auto [_, _resultCursors] = *resultCursors;
         for (auto const& [queryId, cursor, e] : *_resultCursors) {
             for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
-                auto [seqId, seqPos] = sae;
-                results.emplace_back(queryId, seqId, seqPos+offset, e);
+                if constexpr (std::same_as<decltype(sae), std::tuple<uint32_t, uint32_t, bool>>) {
+                    auto [seqId, seqPos, rev] = sae;
+                    if (!rev) {
+                        results.emplace_back(queryId, seqId, seqPos+offset, e);
+                    } else {
+                        // Found the position inside the reversed SA
+                        results.emplace_back(queryId, seqId, seqPos-offset-cursor.steps+1, e);
+                    }
+//                    fmt::print("match: qid: {}, seqid: {} pos: {}+{}+{}, rev: {}\n", queryId, seqId, seqPos, offset, cursor.steps, rev);
+                } else {
+                    auto [seqId, seqPos] = sae;
+                    results.emplace_back(queryId, seqId, seqPos+offset, e);
+                }
             }
         }
 
@@ -366,12 +377,15 @@ void app() {
         archive(samplingRate);
         archive(indexType);
     }
-    if (sigma == 2 && indexType.ends_with("-nd")) runSearch<ivs::dna2>();
-    else if (sigma == 3 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna2>();
-    else if (sigma == 4 && indexType.ends_with("-nd")) runSearch<ivs::dna4>();
-    else if (sigma == 5 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna4>();
-    else if (sigma == 5 &&  indexType.ends_with("-nd")) runSearch<ivs::dna5>();
-    else if (sigma == 6 && !indexType.ends_with("-nd")) runSearch<ivs::d_dna5>();
+    auto nd = [](std::string str) {
+        return str.ends_with("-nd") || str.ends_with("-nd-rev");
+    };
+    if (sigma == 2 && nd(indexType)) runSearch<ivs::dna2>();
+    else if (sigma == 3 && !nd(indexType)) runSearch<ivs::d_dna2>();
+    else if (sigma == 4 &&  nd(indexType)) runSearch<ivs::dna4>();
+    else if (sigma == 5 && !nd(indexType)) runSearch<ivs::d_dna4>();
+    else if (sigma == 5 &&  nd(indexType)) runSearch<ivs::dna5>();
+    else if (sigma == 6 && !nd(indexType)) runSearch<ivs::d_dna5>();
     else throw error_fmt{"unknown index with {} letters, index type {}", sigma, indexType};
 }
 }

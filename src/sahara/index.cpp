@@ -61,6 +61,11 @@ auto cliUseDna2 = clice::Argument {
     .desc   = "use dna 2 alphabet, replace 'N' with random ACG or T and reduce AT->S and CG->W",
 };
 
+auto cliIncludeReverse = clice::Argument {
+    .parent = &cli,
+    .args   = "--include-reverse",
+    .desc   = "Includes the reverse text to the index",
+};
 
 auto cliThreads = clice::Argument {
     .parent = &cli,
@@ -126,14 +131,18 @@ void createIndex() {
     fmt::print("  samplingRate: {}\n", *cliSamplingRate);
     fmt::print("  index type: {}\n", *cliIndexType);
     fmt::print("    use delimiter: {}\n", static_cast<bool>(cliIndexNoDelim));
+    fmt::print("  include reverse text: {}\n", static_cast<bool>(cliIncludeReverse));
 
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-    auto index = VarIndex<Sigma>{};
+    auto index = VarIndex<Alphabet>{};
     auto indexType = *cliIndexType;
     if (cliIndexNoDelim) {
         indexType += "-nd";
+    }
+    if (cliIncludeReverse) {
+        indexType += "-rev";
     }
     index.emplace(indexType, ref, *cliSamplingRate, *cliThreads);
 
@@ -141,6 +150,8 @@ void createIndex() {
 
     // save index
     auto indexPath = fmt::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
+    fmt::print("  output path: {}\n", indexPath);
+
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
     archive(Sigma);
