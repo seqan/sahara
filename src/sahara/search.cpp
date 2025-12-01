@@ -4,14 +4,15 @@
 
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
+#include "VarIndex.h"
 
+#include <channel/channel.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
 #include <clice/clice.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
-#include <fmindex-collection/search/SearchNg26.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -101,6 +102,19 @@ auto cliLimitQueries = clice::Argument {
     .desc   = "only run the given number of queries",
     .value  = size_t{},
 };
+auto cliThreads = clice::Argument {
+    .parent = &cli,
+    .args   = {"-t", "--threads"},
+    .desc   = "number of threads running search in parallel",
+    .value  = size_t{1},
+};
+auto cliBatchSize = clice::Argument {
+    .parent = &cli,
+    .args   = {"--batch_size"},
+    .desc   = "numbers of queries processed in each thread",
+    .value  = size_t{64},
+};
+
 
 template <typename Alphabet>
 void runSearch() {
@@ -160,15 +174,16 @@ void runSearch() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-//    auto index = fmc::BiFMIndex<Sigma/*, fmc::string::InterleavedBitvectorPrefix16*/>{};
-    auto index = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>{};
-
+    auto varIndex = VarIndex<Sigma>{};
     {
         auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
         size_t sigma;
         archive(sigma);
-        archive(index);
+        size_t samplingRate;
+        archive(samplingRate);
+        fmt::print("  samplingRate: {}\n", samplingRate);
+        archive(varIndex);
     }
     timing.emplace_back("ld index", stopWatch.reset());
 
@@ -186,6 +201,10 @@ void runSearch() {
         return iter->second.generator;
     }();
 
+    auto indexSize = std::visit([](auto const& index) {
+        return index.size();
+    }, varIndex.vs);
+
     auto loadSearchScheme = [&](int minK, int maxK, bool edit) {
         auto len = queries[0].size();
         auto oss = generator(minK, maxK, /*unused*/0, /*unused*/0);
@@ -193,22 +212,22 @@ void runSearch() {
             if (!cliDynGenerator) {
                 oss = fmc::search_scheme::expand(oss, len);
             } else {
-                auto partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, index.size(), 1);
+                auto partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
                 fmt::print("partition: {}\n", partition);
-                oss = fmc::search_scheme::expandByWNCTopDown</*Edit=*/true>(oss, len, Sigma, index.size(), 1);
+                oss = fmc::search_scheme::expandByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
             }
             fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, indexSize));
         } else {
             if (!cliDynGenerator) {
                 oss = fmc::search_scheme::expand(oss, len);
             } else {
-                auto partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, index.size(), 1);
+                auto partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
                 fmt::print("partition: {}\n", partition);
-                oss = fmc::search_scheme::expandByWNCTopDown</*Edit=*/false>(oss, len, Sigma, index.size(), 1);
+                oss = fmc::search_scheme::expandByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
             }
             fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, index.size()));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, indexSize));
 
         }
         return oss;
@@ -221,84 +240,118 @@ void runSearch() {
         if (edit) {
             if (!cliDynGenerator) {
             } else {
-                partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, index.size(), 1);
+                partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
                 fmt::print("partition: {}\n", partition);
             }
             fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, index.size()));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, indexSize));
         } else {
             if (!cliDynGenerator) {
             } else {
-                partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, index.size(), 1);
+                partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
                 fmt::print("partition: {}\n", partition);
             }
             fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, index.size()));
+            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, indexSize));
 
         }
         return std::make_tuple(oss, partition);
     };
 
+    std::visit([&]<typename Index>(Index const& index) {
+        auto resultCursors = channel::value_mutex<std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<Index>, size_t>>>{};
 
-    auto resultCursors = std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<decltype(index)>, size_t>>{};
+        bool Edit = *cliDistanceMetric == DistanceMetric::Levenshtein;
+        auto res_cb = [&](size_t queryId, auto const& cursor, size_t errors) {
+            resultCursors->emplace_back(queryId, cursor, errors);
+        };
+        if (*cliSearchMode == SearchMode::All) {
+            if (k == 0 && *cliMaxHits == 0) {
+                auto gqidx = channel::value_mutex<size_t>{};
+                auto workers = channel::workers{*cliThreads, [&]() {
+                    while (true) {
+                        auto [qidx, qidx2] = [&]() -> std::tuple<size_t, size_t> {
+                            auto [_, ptr] = *gqidx;
+                            auto v = *ptr;
+                            *ptr = std::min((*ptr)+1024, queries.size());
+                            return {v, *ptr};
+                        }();
+                        if (qidx == qidx2) return;
+                        auto report = [&](size_t queryId, auto const& cursor) {
+                            res_cb(queryId+qidx, cursor, 0);
+                        };
+                        auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
 
+                        fmc::search_no_errors::search(index, sub_queries, report, *cliBatchSize);
+                    }
+                }};
+            } else {
+                auto [search_scheme, partition]  = loadSearchSchemeUsePartition(0, k, Edit);
+                timing.emplace_back("searchScheme", stopWatch.reset());
+                size_t maxHits = (*cliMaxHits > 0)?*cliMaxHits:std::numeric_limits<size_t>::max();
 
-    bool Edit = *cliDistanceMetric == DistanceMetric::Levenshtein;
-    auto res_cb = [&](size_t queryId, auto const& cursor, size_t errors) {
-        resultCursors.emplace_back(queryId, cursor, errors);
-    };
-    if (*cliSearchMode == SearchMode::All) {
-        auto [search_scheme, partition]  = loadSearchSchemeUsePartition(0, k, Edit);
-        timing.emplace_back("searchScheme", stopWatch.reset());
-
-        if (!Edit) {
-            if (*cliMaxHits == 0) fmc::search_ng26::search<false>(index, queries, search_scheme, partition, res_cb);
-            else                  fmc::search_ng26::search<false>(index, queries, search_scheme, partition, res_cb, *cliMaxHits);
+                auto gqidx = channel::value_mutex<size_t>{};
+                auto workers = channel::workers{*cliThreads, [&]() {
+                    while (true) {
+                        auto [qidx, qidx2] = [&]() -> std::tuple<size_t, size_t> {
+                            auto [_, ptr] = *gqidx;
+                            auto v = *ptr;
+                            *ptr = std::min((*ptr)+1024, queries.size());
+                            return {v, *ptr};
+                        }();
+                        if (qidx == qidx2) return;
+                        auto report = [&](size_t queryId, auto const& cursor, size_t e) {
+                            res_cb(queryId+qidx, cursor, e);
+                        };
+                        auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
+                        if (!Edit) fmc::search_ng26::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
+                        else       fmc::search_ng26::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                    }
+                }};
+            }
         } else {
-            if (*cliMaxHits == 0) fmc::search_ng26::search<true>(index, queries, search_scheme, partition, res_cb);
-            else                  fmc::search_ng26::search<true>(index, queries, search_scheme, partition, res_cb, *cliMaxHits);
+            auto search_schemes = std::vector<decltype(loadSearchSchemeUsePartition(0, k, Edit))>{};
+            for (size_t j{0}; j<=k; ++j) {
+                search_schemes.emplace_back(loadSearchSchemeUsePartition(j, j, Edit));
+            }
+            timing.emplace_back("searchScheme", stopWatch.reset());
+            if (*cliMaxHits == 0) fmc::search_ng26::search_best(index, queries, search_schemes, res_cb);
+            else                  fmc::search_ng26::search_best(index, queries, search_schemes, res_cb, *cliMaxHits);
         }
-    } else {
-        auto search_schemes = std::vector<decltype(loadSearchSchemeUsePartition(0, k, Edit))>{};
-        for (size_t j{0}; j<=k; ++j) {
-            search_schemes.emplace_back(loadSearchSchemeUsePartition(j, j, Edit));
+        timing.emplace_back("search", stopWatch.reset());
+
+        auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
+        auto [_, _resultCursors] = *resultCursors;
+        for (auto const& [queryId, cursor, e] : *_resultCursors) {
+            for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
+                auto [seqId, seqPos] = sae;
+                results.emplace_back(queryId, seqId, seqPos+offset, e);
+            }
         }
-        timing.emplace_back("searchScheme", stopWatch.reset());
-        if (*cliMaxHits == 0) fmc::search_ng26::search_best(index, queries, search_schemes, res_cb);
-        else                  fmc::search_ng26::search_best(index, queries, search_schemes, res_cb, *cliMaxHits);
-    }
-    timing.emplace_back("search", stopWatch.reset());
 
-    auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
-    for (auto const& [queryId, cursor, e] : resultCursors) {
-        for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
-            auto [seqId, seqPos] = sae;
-            results.emplace_back(queryId, seqId, seqPos+offset, e);
+        timing.emplace_back("locate", stopWatch.reset());
+
+        auto finishTime = std::chrono::steady_clock::now();
+        {
+            auto ofs = fopen(cliOutput->c_str(), "w");
+            for (auto const& [queryId, seqId, pos, e] : results) {
+                fmt::print(ofs, "{} {} {}\n", queryId, seqId, pos);
+            }
+            fclose(ofs);
         }
-    }
 
-    timing.emplace_back("locate", stopWatch.reset());
+        timing.emplace_back("result", stopWatch.reset());
 
-    auto finishTime = std::chrono::steady_clock::now();
-    {
-        auto ofs = fopen(cliOutput->c_str(), "w");
-        for (auto const& [queryId, seqId, pos, e] : results) {
-            fmt::print(ofs, "{} {} {}\n", queryId, seqId, pos);
+        fmt::print("stats:\n");
+        double totalTime{};
+        for (auto const& [key, time] : timing) {
+            fmt::print("  {:<20} {:> 10.2f}s\n", key + " time:", time);
+            totalTime += time;
         }
-        fclose(ofs);
-    }
-
-    timing.emplace_back("result", stopWatch.reset());
-
-    fmt::print("stats:\n");
-    double totalTime{};
-    for (auto const& [key, time] : timing) {
-        fmt::print("  {:<20} {:> 10.2f}s\n", key + " time:", time);
-        totalTime += time;
-    }
-    fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
-    fmt::print("  queries per second:  {:> 10.0f}q/s\n", queries.size() / totalTime);
-    fmt::print("  number of hits:      {:>10}\n", results.size());
+        fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
+        fmt::print("  queries per second:  {:> 10.0f}q/s\n", queries.size() / totalTime);
+        fmt::print("  number of hits:      {:>10}\n", results.size());
+    }, varIndex.vs);
 }
 
 void app() {

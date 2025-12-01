@@ -29,8 +29,9 @@ target_link_libraries(sahara
     ivsigma::ivsigma
     clice::clice
     cereal::cereal
+    channel::channel
     xxhash
 )
 
-set_property(TARGET sahara PROPERTY CXX_STANDARD 20)
+set_property(TARGET sahara PROPERTY CXX_STANDARD 23)
 set_property(TARGET sahara PROPERTY CXX_EXTENSIONS FALSE)

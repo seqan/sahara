@@ -4,6 +4,7 @@
 
 #include "utils/StopWatch.h"
 #include "utils/error_fmt.h"
+#include "VarIndex.h"
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/array.hpp>
@@ -30,13 +31,36 @@ auto cliIgnoreUnknown = clice::Argument {
     .desc   = "ignores unknown nuclioteds in input data and replaces them with 'N'",
 };
 
+auto cliIndexType = clice::Argument {
+    .parent  = &cli,
+    .args    = "--index_type",
+    .desc    = "type of the index (implementation detail)",
+    .value   = std::string{"ibv16"},
+    .mapping = {{
+        {"ibv16", "ibv16"},
+        {"fbv64_64", "fbv64_64"},
+        {"fbv512_64", "fbv512_64"},
+    }},
+};
+
 auto cliUseDna4 = clice::Argument {
     .parent = &cli,
     .args   = "--dna4",
     .desc   = "use dna 4 alphabet, replace 'N' with random ACG or T",
 };
 
-
+auto cliThreads = clice::Argument {
+    .parent = &cli,
+    .args   = {"-t", "--threads"},
+    .desc   = "number of threads to build the index",
+    .value  = size_t{1},
+};
+auto cliSamplingRate = clice::Argument {
+    .parent = &cli,
+    .args   = {"-s", "--sampling_rate"},
+    .desc   = "sampling rate of the fm index",
+    .value  = size_t{16},
+};
 
 template <typename Alphabet>
 void createIndex() {
@@ -80,24 +104,24 @@ void createIndex() {
     fmt::print("  sigma: {}\n", Sigma);
     fmt::print("  references: {}\n", ref.size());
     fmt::print("  totalSize: {}\n", totalSize);
+    fmt::print("  threads: {}\n", *cliThreads);
+    fmt::print("  samplingRate: {}\n", *cliSamplingRate);
 
     timing.emplace_back("ld queries", stopWatch.reset());
 
     // create index
-//    auto index = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{ref, /*samplingRate*/16, /*threadNbr*/1};
-    auto index = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>{ref, /*samplingRate*/16, /*threadNbr*/1};
-
+    auto index = VarIndex<Sigma>{};
+    auto indexType = *cliIndexType;
+    index.emplace(indexType, ref, *cliSamplingRate, *cliThreads);
 
     timing.emplace_back("index creation", stopWatch.reset());
 
     // save index
-    auto indexPath = cli->string() + ".idx";
-    if (cliUseDna4) {
-        indexPath = cli->string() + ".dna4.idx";
-    }
+    auto indexPath = std::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
     auto ofs       = std::ofstream{indexPath, std::ios::binary};
     auto archive   = cereal::BinaryOutputArchive{ofs};
     archive(Sigma);
+    archive(*cliSamplingRate);
     archive(index);
     ofs.close();
 
@@ -110,9 +134,7 @@ void createIndex() {
         totalTime += time;
     }
     fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
-
 }
-
 
 void app() {
     if (cliUseDna4) {

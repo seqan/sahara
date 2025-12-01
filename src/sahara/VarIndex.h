@@ -1,0 +1,46 @@
+// SPDX-FileCopyrightText: 2025 Simon Gene Gottlieb
+// SPDX-License-Identifier: BSD-3-Clause
+#pragma once
+
+#include <fmindex-collection/fmindex-collection.h>
+
+template <size_t Sigma>
+struct VarIndex {
+    std::string type;
+    using Vs = std::variant<
+        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k>
+    >;
+    Vs vs;
+
+    template <typename Archive>
+    void save(Archive& ar) const {
+        ar(type);
+        std::visit([&](auto const& v) {
+            ar(v);
+        }, vs);
+    }
+    template <typename... Args>
+    void emplace(std::string _type, Args&&... args) {
+        type = _type;
+        if (type == "ibv16") {
+            vs = fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>{std::forward<Args>(args)...};
+        } else if (type == "fbv64_64") {
+            vs = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>{std::forward<Args>(args)...};
+        } else if (type == "fbv512_64") {
+            vs = fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k>{std::forward<Args>(args)...};
+        } else {
+            throw std::runtime_error{"unknown index type"};
+        }
+    }
+    template <typename Archive>
+    void load(Archive& ar) {
+        ar(type);
+        emplace(type);
+        std::visit([&](auto& v) {
+            ar(v);
+        }, vs);
+    }
+};
+
