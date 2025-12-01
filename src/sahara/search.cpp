@@ -323,9 +323,8 @@ void runSearch() {
         auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
         auto [_, _resultCursors] = *resultCursors;
         for (auto const& [queryId, cursor, e] : *_resultCursors) {
-            for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
-                if constexpr (std::same_as<decltype(sae), std::tuple<uint32_t, uint32_t, bool>>) {
-                    auto [seqId, seqPos, rev] = sae;
+            if constexpr (std::same_as<typename Index::ADEntry, std::tuple<uint32_t, uint32_t, bool>>) {
+                for (auto [seqId, seqPos, rev, offset] : fmc::LocateLinear{index, cursor}) {
                     if (!rev) {
                         results.emplace_back(queryId, seqId, seqPos+offset, e);
                     } else {
@@ -333,9 +332,10 @@ void runSearch() {
                         results.emplace_back(queryId, seqId, seqPos-offset-cursor.steps+1, e);
                     }
 //                    fmt::print("match: qid: {}, seqid: {} pos: {}+{}+{}, rev: {}\n", queryId, seqId, seqPos, offset, cursor.steps, rev);
-                } else {
-                    auto [seqId, seqPos] = sae;
-                    results.emplace_back(queryId, seqId, seqPos+offset, e);
+                }
+            } else {
+                for (auto [seqId, seqPos, offset] : fmc::LocateLinear{index, cursor}) {
+                        results.emplace_back(queryId, seqId, seqPos+offset, e);
                 }
             }
         }

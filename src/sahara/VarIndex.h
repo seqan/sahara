@@ -9,6 +9,9 @@ auto _emplaceRev() {
     return Index{};
 }
 
+template <typename ADEntry>
+//using SparseArray = fmc::suffixarray::SparseArray<ADEntry, fmc::bitvector::OptSparseRBBitvector<>>;
+using SparseArray = fmc::suffixarray::SparseArray<ADEntry>;
 
 template <typename Index, typename Alphabet>
 auto _emplaceRev(fmc::Sequences auto const& _input, size_t samplingRate, size_t threadNbr) {
@@ -26,13 +29,18 @@ auto _emplaceRev(fmc::Sequences auto const& _input, size_t samplingRate, size_t 
     //!TODO what about empty strings?
     while (inputSizes[refId] == pos) {
         refId += 1;
-        assert(inputSizes.size() < refId);
+        assert(refId < inputSizes.size());
     }
+    auto const startRefId = refId;
 
     using ADEntry = std::tuple<uint32_t, uint32_t, bool>;
 
-    auto annotatedSequence = fmc::suffixarray::SparseArray<ADEntry> {
+    auto annotatedSequence = SparseArray<ADEntry> {
         std::views::iota(size_t{0}, totalSize) | std::views::transform([&](size_t phase) -> std::optional<ADEntry> {
+            if (phase == 0) {
+                refId = startRefId;
+                pos = 0;
+            }
             if (!includeReversedInput || phase*2 < totalSize) { // going forward
                 assert(refId < inputSizes.size());
                 assert(pos < inputSizes[refId]);
@@ -78,18 +86,18 @@ template <typename Alphabet, size_t Sigma=Alphabet::size()>
 struct VarIndex {
     std::string type;
     using Vs = std::variant<
-        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>,
-        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>,
-        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k>,
-        typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k>::NoDelim,
-        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
-        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
-        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
-        typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim
+        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>,
+        typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
+        fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
+        typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim
     >;
     Vs vs;
 
@@ -146,10 +154,10 @@ struct VarIndex<Alphabet, 2> {
     static constexpr size_t Sigma = 2;
     std::string type;
     using Vs = std::variant<
-        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev,
-        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, fmc::suffixarray::SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev
     >;
     Vs vs;
 

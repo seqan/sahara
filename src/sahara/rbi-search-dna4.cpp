@@ -204,8 +204,7 @@ void app() {
 
     auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
     for (auto const& [queryId, cursor, e] : resultCursors) {
-        for (auto [sae, offset] : fmc::LocateLinear{index, cursor}) {
-            auto [seqId, seqPos] = sae;
+        for (auto [seqId, seqPos, offset] : fmc::LocateLinear{index, cursor}) {
             results.emplace_back(queryId, seqId, seqPos + offset, e);
         }
     }
