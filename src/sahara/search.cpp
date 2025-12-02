@@ -185,6 +185,11 @@ void runSearch() {
         fmt::print("  samplingRate: {}\n", samplingRate);
         archive(varIndex);
     }
+
+    auto revTextIncluded = varIndex.type.ends_with("-rev");
+    if (revTextIncluded && !cliNoReverse) {
+        queries.resize(queries.size()/2);
+    }
     timing.emplace_back("ld index", stopWatch.reset());
 
     auto k = *cliNumErrors;
@@ -325,6 +330,7 @@ void runSearch() {
         for (auto const& [queryId, cursor, e] : *_resultCursors) {
             if constexpr (std::same_as<typename Index::ADEntry, std::tuple<uint32_t, uint32_t, bool>>) {
                 for (auto [seqId, seqPos, rev, offset] : fmc::LocateLinear{index, cursor}) {
+                    if (cliNoReverse && rev) continue;
                     if (!rev) {
                         results.emplace_back(queryId, seqId, seqPos+offset, e);
                     } else {
