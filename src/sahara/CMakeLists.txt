@@ -10,10 +10,6 @@ add_executable(sahara
     kmer-index.cpp
     kmer-search.cpp
     main.cpp
-    rbi-index.cpp
-    rbi-search.cpp
-    rbi-index-dna4.cpp
-    rbi-search-dna4.cpp
     search.cpp
     uni-index.cpp
     uni-search.cpp
