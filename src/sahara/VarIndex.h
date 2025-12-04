@@ -147,6 +147,13 @@ struct VarIndex {
             ar(v);
         }, vs);
     }
+    template <typename Archive>
+    void saveSize(Archive& ar) const {
+        ar(type);
+        std::visit([&](auto& v) {
+            ar(v);
+        }, vs);
+    }
 };
 
 template <typename Alphabet>
@@ -194,6 +201,13 @@ struct VarIndex<Alphabet, 2> {
     void load(Archive& ar) {
         ar(type);
         emplace(type);
+        std::visit([&](auto& v) {
+            ar(v);
+        }, vs);
+    }
+    template <typename Archive>
+    void saveSize(Archive& ar) const {
+        ar(type);
         std::visit([&](auto& v) {
             ar(v);
         }, vs);

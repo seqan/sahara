@@ -19,9 +19,8 @@
     },
     {
       "name": "fmindex-collection",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "github_repository": "SGSSGene/fmindex-collection",
-      "git_tag": "f6f4537dadc884d2cc06c44a4fdc6c1a32526398",
     },
     {
       "name": "clice",
@@ -55,6 +54,6 @@
       "git_tag_ignore": [
         "r[0-9]*"
       ]
-    }
+    },
   ]
 }

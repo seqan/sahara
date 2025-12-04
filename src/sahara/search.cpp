@@ -16,6 +16,7 @@
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
+#include <mmser/mmser.h>
 #include <string>
 #include <unordered_set>
 
@@ -113,6 +114,11 @@ auto cliCountOnly = clice::Argument {
     .args   = {"--count-only"},
     .desc   = "only count the number of results without locating them",
 };
+auto cliPreloadIndex = clice::Argument {
+    .parent = &cli,
+    .args   = {"--preload-index"},
+    .desc   = "load index via copy not mmap",
+};
 auto cliBatchSize = clice::Argument {
     .parent = &cli,
     .args   = {"--batch_size"},
@@ -179,17 +185,27 @@ void runSearch() {
         throw error_fmt{"no valid index path at {}", *cliIndex};
     }
 
-    auto varIndex = VarIndex<Alphabet>{};
-    {
-        auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
-        auto archive = cereal::BinaryInputArchive{ifs};
-        size_t sigma;
-        archive(sigma);
-        size_t samplingRate;
-        archive(samplingRate);
-        fmt::print("  samplingRate: {}\n", samplingRate);
-        archive(varIndex);
-    }
+    using Index = VarIndex<Alphabet>;
+    auto [varIndex, storageManager] = [&]() -> std::tuple<Index, std::unique_ptr<std::any>> {
+        if (cliIndex->string().ends_with(".mmser")) {
+            if (cliPreloadIndex) {
+                return mmser::loadFileStream<Index>(*cliIndex);
+            } else {
+                return mmser::loadFile<Index>(*cliIndex);
+            }
+        } else {
+            auto varIndex = VarIndex<Alphabet>{};
+            auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
+            auto archive = cereal::BinaryInputArchive{ifs};
+            size_t sigma;
+            archive(sigma);
+            size_t samplingRate;
+            archive(samplingRate);
+            fmt::print("  samplingRate: {}\n", samplingRate);
+            archive(varIndex);
+            return {std::move(varIndex), std::unique_ptr<std::any>{}};
+        }
+    }();
 
     auto revTextIncluded = varIndex.type.ends_with("-rev");
     if (revTextIncluded && !cliNoReverse) {
@@ -392,11 +408,24 @@ void runSearch() {
 }
 
 void app() {
+    auto mmser_loading = cliIndex->string().ends_with(".mmser");
+
     // load sigma value
     size_t sigma;
     std::string indexType;
-    {
-        auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
+    auto path = cliIndex->string();
+    if (mmser_loading) {
+        //!TODO probe the non .mmser version
+        path = path.substr(0, path.size() - 6);
+        auto ifs     = std::ifstream{path, std::ios::binary};
+        auto archive = cereal::BinaryInputArchive{ifs};
+        archive(sigma);
+        size_t samplingRate;
+        archive(samplingRate);
+        archive(indexType);
+
+    } else {
+        auto ifs     = std::ifstream{path, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
         archive(sigma);
         size_t samplingRate;

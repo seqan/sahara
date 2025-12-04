@@ -14,6 +14,7 @@
 #include <fmindex-collection/fmindex-collection.h>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
+#include <mmser/mmser.h>
 #include <string>
 
 namespace {
@@ -158,8 +159,11 @@ void createIndex() {
     archive(*cliSamplingRate);
     archive(index);
     ofs.close();
+    timing.emplace_back("saving to disk via cereal", stopWatch.reset());
 
-    timing.emplace_back("saving to disk", stopWatch.reset());
+    mmser::saveFile(indexPath + ".mmser", index);
+
+    timing.emplace_back("saving to disk via mmser", stopWatch.reset());
 
     fmt::print("stats:\n");
     double totalTime{};
