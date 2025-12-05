@@ -108,6 +108,11 @@ auto cliThreads = clice::Argument {
     .desc   = "number of threads running search in parallel",
     .value  = size_t{1},
 };
+auto cliCountOnly = clice::Argument {
+    .parent = &cli,
+    .args   = {"--count-only"},
+    .desc   = "only count the number of results without locating them",
+};
 auto cliBatchSize = clice::Argument {
     .parent = &cli,
     .args   = {"--batch_size"},
@@ -327,7 +332,14 @@ void runSearch() {
 
         auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
         auto [_, _resultCursors] = *resultCursors;
+        size_t totalNumberOfHits{};
+
         for (auto const& [queryId, cursor, e] : *_resultCursors) {
+            if (cliCountOnly) {
+                totalNumberOfHits += cursor.count();
+                continue;
+            }
+
             if constexpr (std::same_as<typename Index::ADEntry, std::tuple<uint32_t, uint32_t, bool>>) {
                 for (auto [seqId, seqPos, rev, offset] : fmc::LocateLinear{index, cursor}) {
                     if (cliNoReverse && rev) continue;
@@ -346,7 +358,11 @@ void runSearch() {
             }
         }
 
-        timing.emplace_back("locate", stopWatch.reset());
+        if (!cliCountOnly) {
+            timing.emplace_back("locate", stopWatch.reset());
+        } else {
+            timing.emplace_back("count", stopWatch.reset());
+        }
 
         auto finishTime = std::chrono::steady_clock::now();
         {
@@ -367,7 +383,11 @@ void runSearch() {
         }
         fmt::print("  total time:          {:> 10.2f}s\n", totalTime);
         fmt::print("  queries per second:  {:> 10.0f}q/s\n", queries.size() / totalTime);
-        fmt::print("  number of hits:      {:>10}\n", results.size());
+        if (!cliCountOnly) {
+            fmt::print("  number of hits:      {:>10}\n", results.size());
+        } else {
+            fmt::print("  number of hits:      {:>10}\n", totalNumberOfHits);
+        }
     }, varIndex.vs);
 }
 
