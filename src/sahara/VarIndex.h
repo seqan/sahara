@@ -3,6 +3,7 @@
 #pragma once
 
 #include <fmindex-collection/fmindex-collection.h>
+#include <fmindex-collection/fmindex/BiFMIndexNStepCursor.h>
 
 template <typename Index, typename Alphabet>
 auto _emplaceRev() {
@@ -97,7 +98,25 @@ struct VarIndex {
         fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>,
         typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
         typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
-        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim
+        typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<4>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<4>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::SetNStep<4>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<2>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<3>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<4>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<4>,
+        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::SetNStep<4>
     >;
     Vs vs;
 
@@ -137,6 +156,24 @@ struct VarIndex {
         else if (type == "ibv16-nd-rev")     _emplaceRev< 9>(std::forward<Args>(args)...);
         else if (type == "fbv64_64-nd-rev")  _emplaceRev<10>(std::forward<Args>(args)...);
         else if (type == "fbv512_64-nd-rev") _emplaceRev<11>(std::forward<Args>(args)...);
+        else if (type == "ibv16_2step")      _emplace<12>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_2step")   _emplace<13>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_2step")  _emplace<14>(std::forward<Args>(args)...);
+        else if (type == "ibv16_3step")      _emplace<15>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_3step")   _emplace<16>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_3step")  _emplace<17>(std::forward<Args>(args)...);
+        else if (type == "ibv16_4step")      _emplace<18>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_4step")   _emplace<19>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_4step")  _emplace<20>(std::forward<Args>(args)...);
+        else if (type == "ibv16_2step-nd")      _emplace<21>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_2step-nd")   _emplace<22>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_2step-nd")  _emplace<23>(std::forward<Args>(args)...);
+        else if (type == "ibv16_3step-nd")      _emplace<24>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_3step-nd")   _emplace<25>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_3step-nd")  _emplace<26>(std::forward<Args>(args)...);
+        else if (type == "ibv16_4step-nd")      _emplace<27>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64_4step-nd")   _emplace<28>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64_4step-nd")  _emplace<29>(std::forward<Args>(args)...);
         else throw std::runtime_error{"unknown index type: " + type};
     }
     template <typename Archive>

@@ -13,6 +13,7 @@
 #include <clice/clice.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
+#include <fmindex-collection/search/SearchNg27.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>

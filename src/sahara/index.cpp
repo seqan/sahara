@@ -41,6 +41,16 @@ auto cliIndexType = clice::Argument {
         {"ibv16", "ibv16"},
         {"fbv64_64", "fbv64_64"},
         {"fbv512_64", "fbv512_64"},
+        {"ibv16_2step", "ibv16_2step"},
+        {"fbv64_64_2step", "fbv64_64_2step"},
+        {"fbv512_64_2step", "fbv512_64_2step"},
+        {"ibv16_3step", "ibv16_3step"},
+        {"fbv64_64_3step", "fbv64_64_3step"},
+        {"fbv512_64_3step", "fbv512_64_3step"},
+        {"ibv16_4step", "ibv16_4step"},
+        {"fbv64_64_4step", "fbv64_64_4step"},
+        {"fbv512_64_4step", "fbv512_64_4step"},
+
     }},
 };
 
