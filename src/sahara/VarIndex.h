@@ -85,6 +85,8 @@ auto _emplaceRev(fmc::Sequences auto const& _input, size_t samplingRate, size_t 
 
 template <typename Alphabet, size_t Sigma=Alphabet::size()>
 struct VarIndex {
+    size_t sigma{Sigma};
+    size_t samplingRate;
     std::string type;
     using Vs = std::variant<
         fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>,
@@ -122,6 +124,8 @@ struct VarIndex {
 
     template <typename Archive>
     void save(Archive& ar) const {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         std::visit([&](auto const& v) {
             ar(v);
@@ -178,6 +182,8 @@ struct VarIndex {
     }
     template <typename Archive>
     void load(Archive& ar) {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         emplace(type);
         std::visit([&](auto& v) {
@@ -186,6 +192,8 @@ struct VarIndex {
     }
     template <typename Archive>
     void saveSize(Archive& ar) const {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         std::visit([&](auto& v) {
             ar(v);
@@ -196,6 +204,8 @@ struct VarIndex {
 template <typename Alphabet>
 struct VarIndex<Alphabet, 2> {
     static constexpr size_t Sigma = 2;
+    size_t sigma{Sigma};
+    size_t samplingRate;
     std::string type;
     using Vs = std::variant<
         typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
@@ -207,6 +217,8 @@ struct VarIndex<Alphabet, 2> {
 
     template <typename Archive>
     void save(Archive& ar) const {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         std::visit([&](auto const& v) {
             ar(v);
@@ -236,6 +248,8 @@ struct VarIndex<Alphabet, 2> {
     }
     template <typename Archive>
     void load(Archive& ar) {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         emplace(type);
         std::visit([&](auto& v) {
@@ -244,6 +258,8 @@ struct VarIndex<Alphabet, 2> {
     }
     template <typename Archive>
     void saveSize(Archive& ar) const {
+        ar(sigma);
+        ar(samplingRate);
         ar(type);
         std::visit([&](auto& v) {
             ar(v);

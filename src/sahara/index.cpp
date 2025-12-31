@@ -50,7 +50,6 @@ auto cliIndexType = clice::Argument {
         {"ibv16_4step", "ibv16_4step"},
         {"fbv64_64_4step", "fbv64_64_4step"},
         {"fbv512_64_4step", "fbv512_64_4step"},
-
     }},
 };
 
@@ -89,6 +88,16 @@ auto cliSamplingRate = clice::Argument {
     .args   = {"-s", "--sampling_rate"},
     .desc   = "sampling rate of the fm index",
     .value  = size_t{16},
+};
+auto cliOutputFormat = clice::Argument {
+    .parent  = &cli,
+    .args    = {"--of", "--output_format"},
+    .desc    = "cerealization technique used cereal or mmser",
+    .value   = std::string{"mmser"},
+    .mapping = {{
+        {"cereal", "cereal"},
+        {"mmser", "mmser"},
+    }},
 };
 
 template <typename Alphabet>
@@ -156,6 +165,7 @@ void createIndex() {
         indexType += "-rev";
     }
     index.emplace(indexType, ref, *cliSamplingRate, *cliThreads);
+    index.samplingRate = *cliSamplingRate;
 
     timing.emplace_back("index creation", stopWatch.reset());
 
@@ -163,17 +173,16 @@ void createIndex() {
     auto indexPath = fmt::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
     fmt::print("  output path: {}\n", indexPath);
 
-    auto ofs       = std::ofstream{indexPath, std::ios::binary};
-    auto archive   = cereal::BinaryOutputArchive{ofs};
-    archive(Sigma);
-    archive(*cliSamplingRate);
-    archive(index);
-    ofs.close();
-    timing.emplace_back("saving to disk via cereal", stopWatch.reset());
-
-    mmser::saveFile(indexPath + ".mmser", index);
-
-    timing.emplace_back("saving to disk via mmser", stopWatch.reset());
+    if (*cliOutputFormat == "mmser") {
+        mmser::saveFile(indexPath + ".mmser", index);
+        timing.emplace_back("saving to disk via mmser", stopWatch.reset());
+    } else if (*cliOutputFormat == "cereal") {
+        auto ofs       = std::ofstream{indexPath, std::ios::binary};
+        auto archive   = cereal::BinaryOutputArchive{ofs};
+        archive(index);
+        ofs.close();
+        timing.emplace_back("saving to disk via cereal", stopWatch.reset());
+    }
 
     fmt::print("stats:\n");
     double totalTime{};

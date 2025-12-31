@@ -198,15 +198,12 @@ void runSearch() {
             auto varIndex = VarIndex<Alphabet>{};
             auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
             auto archive = cereal::BinaryInputArchive{ifs};
-            size_t sigma;
-            archive(sigma);
-            size_t samplingRate;
-            archive(samplingRate);
-            fmt::print("  samplingRate: {}\n", samplingRate);
             archive(varIndex);
             return {std::move(varIndex), std::unique_ptr<std::any>{}};
         }
     }();
+    fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
+
 
     auto revTextIncluded = varIndex.type.ends_with("-rev");
     if (revTextIncluded && !cliNoReverse) {
@@ -416,15 +413,11 @@ void app() {
     std::string indexType;
     auto path = cliIndex->string();
     if (mmser_loading) {
-        //!TODO probe the non .mmser version
-        path = path.substr(0, path.size() - 6);
-        auto ifs     = std::ifstream{path, std::ios::binary};
-        auto archive = cereal::BinaryInputArchive{ifs};
-        archive(sigma);
+        auto archive = mmser::ArchiveLoadStream{path};
+        mmser::handle(archive, sigma);
         size_t samplingRate;
-        archive(samplingRate);
-        archive(indexType);
-
+        mmser::handle(archive, samplingRate);
+        mmser::handle(archive, indexType);
     } else {
         auto ifs     = std::ifstream{path, std::ios::binary};
         auto archive = cereal::BinaryInputArchive{ifs};
