@@ -286,8 +286,10 @@ void runSearch() {
         auto resultCursors = channel::value_mutex<std::vector<std::tuple<size_t, fmc::LeftBiFMIndexCursor<Index>, size_t>>>{};
 
         bool Edit = *cliDistanceMetric == DistanceMetric::Levenshtein;
+        auto totalHits = size_t{};
         auto res_cb = [&](size_t queryId, auto const& cursor, size_t errors) {
             resultCursors->emplace_back(queryId, cursor, errors);
+            totalHits += cursor.count();
         };
         if (*cliSearchMode == SearchMode::All) {
             if (k == 0 && *cliMaxHits == 0) {
@@ -345,6 +347,7 @@ void runSearch() {
         timing.emplace_back("search", stopWatch.reset());
 
         auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
+        results.reserve(totalHits);
         auto [_, _resultCursors] = *resultCursors;
         size_t totalNumberOfHits{};
 
@@ -367,7 +370,7 @@ void runSearch() {
                 }
             } else {
                 for (auto [seqId, seqPos, offset] : fmc::LocateLinear{index, cursor}) {
-                        results.emplace_back(queryId, seqId, seqPos+offset, e);
+                    results.emplace_back(queryId, seqId, seqPos+offset, e);
                 }
             }
         }
