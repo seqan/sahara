@@ -330,8 +330,8 @@ void runSearch() {
                             res_cb(queryId+qidx, cursor, e);
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
-                        if (!Edit) fmc::search_ng26::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
-                        else       fmc::search_ng26::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                        if (!Edit) fmc::search_ng27::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
+                        else       fmc::search_ng27::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
                     }
                 }};
             }
