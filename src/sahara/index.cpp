@@ -41,16 +41,20 @@ auto cliIndexType = clice::Argument {
         {"ibv16", "ibv16"},
         {"fbv64_64", "fbv64_64"},
         {"fbv512_64", "fbv512_64"},
-        {"ibv16_2step", "ibv16_2step"},
-        {"fbv64_64_2step", "fbv64_64_2step"},
-        {"fbv512_64_2step", "fbv512_64_2step"},
-        {"ibv16_3step", "ibv16_3step"},
-        {"fbv64_64_3step", "fbv64_64_3step"},
-        {"fbv512_64_3step", "fbv512_64_3step"},
-        {"ibv16_4step", "ibv16_4step"},
-        {"fbv64_64_4step", "fbv64_64_4step"},
-        {"fbv512_64_4step", "fbv512_64_4step"},
     }},
+};
+
+auto cliIndexTypePaired = clice::Argument {
+    .parent = &cliIndexType,
+    .args   = "--paired",
+    .desc   = "some types like fbv*_* have a specialzed 'paired' variant",
+};
+
+auto cliIndexTypeKStep = clice::Argument {
+    .parent = &cliIndexType,
+    .args   = "--k-step",
+    .desc   = "enable additional k-step functionality, steps of 1 turns this function off",
+    .value  = size_t{1},
 };
 
 auto cliIndexNoDelim = clice::Argument {
@@ -150,7 +154,9 @@ void createIndex() {
     fmt::print("  threads: {}\n", *cliThreads);
     fmt::print("  samplingRate: {}\n", *cliSamplingRate);
     fmt::print("  index type: {}\n", *cliIndexType);
+    fmt::print("    paired: {}\n", static_cast<bool>(cliIndexTypePaired));
     fmt::print("    use delimiter: {}\n", static_cast<bool>(cliIndexNoDelim));
+    fmt::print("    k-step: {}\n", *cliIndexTypeKStep);
     fmt::print("  include reverse text: {}\n", static_cast<bool>(cliIncludeReverse));
 
     timing.emplace_back("ld queries", stopWatch.reset());
@@ -158,11 +164,17 @@ void createIndex() {
     // create index
     auto index = VarIndex<Alphabet>{};
     auto indexType = *cliIndexType;
+    if (cliIndexTypeKStep) {
+        indexType = fmt::format("{}_{}step", indexType, *cliIndexTypeKStep);
+    }
     if (cliIndexNoDelim) {
         indexType += "-nd";
     }
     if (cliIncludeReverse) {
         indexType += "-rev";
+    }
+    if (cliIndexTypePaired) {
+        indexType = "p" + indexType;
     }
     index.emplace(indexType, ref, *cliSamplingRate, *cliThreads);
     index.samplingRate = *cliSamplingRate;
