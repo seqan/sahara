@@ -14,6 +14,8 @@
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/search/SearchNg27.h>
+#include <fmindex-collection/search/SearchNg28.h>
+#include <fmindex-collection/search/SearchNg28KStep.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -125,6 +127,18 @@ auto cliBatchSize = clice::Argument {
     .args   = {"--batch_size"},
     .desc   = "numbers of queries processed in each thread",
     .value  = size_t{64},
+};
+auto cliNoOpt = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-opt-zero-error"},
+    .desc   = "do not use zero error optimized code (advanced)",
+    .tags   = {"advanced"},
+};
+auto cliNoKStep = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-kstep"},
+    .desc   = "do not use kstep, even if available",
+    .tags   = {"advanced"},
 };
 
 
@@ -292,7 +306,7 @@ void runSearch() {
             totalHits += cursor.count();
         };
         if (*cliSearchMode == SearchMode::All) {
-            if (k == 0 && *cliMaxHits == 0) {
+            if (k == 0 && *cliMaxHits == 0 && !cliNoOpt) {
                 auto gqidx = channel::value_mutex<size_t>{};
                 auto workers = channel::workers{*cliThreads, [&]() {
                     while (true) {
@@ -307,7 +321,6 @@ void runSearch() {
                             res_cb(queryId+qidx, cursor, 0);
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
-
                         fmc::search_no_errors::search(index, sub_queries, report, *cliBatchSize);
                     }
                 }};
@@ -330,8 +343,14 @@ void runSearch() {
                             res_cb(queryId+qidx, cursor, e);
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
-                        if (!Edit) fmc::search_ng27::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
-                        else       fmc::search_ng27::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                        if (cliNoKStep) {
+                            if (!Edit) fmc::search_ng28/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
+                            else       fmc::search_ng28/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                        } else {
+                            if (!Edit) fmc::search_ng28_kstep::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
+                            else       fmc::search_ng28_kstep::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                        }
+
                     }
                 }};
             }

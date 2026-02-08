@@ -3,7 +3,8 @@
 #pragma once
 
 #include <fmindex-collection/fmindex-collection.h>
-#include <fmindex-collection/fmindex/BiFMIndexNStepCursor.h>
+#include <fmindex-collection/fmindex/BiFMIndexKStepCursor.h>
+#include <fmindex-collection/string/PairedFlattenedBitvectors2L_b.h>
 
 template <typename Index, typename Alphabet>
 auto _emplaceRev() {
@@ -105,36 +106,36 @@ struct VarIndex {
         typename fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
         typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
         typename fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<2>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<3>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<4>,
-        typename fmc::BiFMIndexNStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetNStep<4>
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvector16, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>
     >;
     Vs vs;
 
