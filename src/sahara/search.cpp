@@ -451,12 +451,12 @@ void app() {
     auto nd = [](std::string str) {
         return str.ends_with("-nd") || str.ends_with("-nd-rev");
     };
-    if (sigma == 2 && nd(indexType)) runSearch<ivs::dna2>();
+/*    if (sigma == 2 && nd(indexType)) runSearch<ivs::dna2>();
     else if (sigma == 3 && !nd(indexType)) runSearch<ivs::d_dna2>();
-    else if (sigma == 4 &&  nd(indexType)) runSearch<ivs::dna4>();
-    else if (sigma == 5 && !nd(indexType)) runSearch<ivs::d_dna4>();
+    else*/ if (sigma == 4 &&  nd(indexType)) runSearch<ivs::dna4>();
+/*    else if (sigma == 5 && !nd(indexType)) runSearch<ivs::d_dna4>();
     else if (sigma == 5 &&  nd(indexType)) runSearch<ivs::dna5>();
-    else if (sigma == 6 && !nd(indexType)) runSearch<ivs::d_dna5>();
+    else if (sigma == 6 && !nd(indexType)) runSearch<ivs::d_dna5>();*/
     else throw error_fmt{"unknown index with {} letters, index type {}", sigma, indexType};
 }
 }

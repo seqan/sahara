@@ -39,6 +39,8 @@ auto cliIndexType = clice::Argument {
     .value   = std::string{"ibv16"},
     .mapping = {{
         {"ibv16", "ibv16"},
+        {"mbv64_64", "mbv64_64"},
+        {"mbv512_64", "mbv512_64"},
         {"fbv64_64", "fbv64_64"},
         {"fbv512_64", "fbv512_64"},
     }},
@@ -206,11 +208,11 @@ void createIndex() {
 }
 
 void app() {
-    if      (cliUseDna2 && cliIndexNoDelim)  createIndex<ivs::dna2>();
+/*    if      (cliUseDna2 && cliIndexNoDelim)  createIndex<ivs::dna2>();
     else if (cliUseDna2 && !cliIndexNoDelim) createIndex<ivs::d_dna2>();
-    else if (cliUseDna4 && cliIndexNoDelim)  createIndex<ivs::dna4>();
-    else if (cliUseDna4 && !cliIndexNoDelim) createIndex<ivs::d_dna4>();
+    else*/ if (cliUseDna4 && cliIndexNoDelim)  createIndex<ivs::dna4>();
+/*    else if (cliUseDna4 && !cliIndexNoDelim) createIndex<ivs::d_dna4>();
     else if (cliIndexNoDelim)                createIndex<ivs::dna5>();
-    else                                     createIndex<ivs::d_dna5>();
+    else                                     createIndex<ivs::d_dna5>();*/
 }
 }

@@ -89,8 +89,14 @@ struct VarIndex {
     size_t sigma{Sigma};
     size_t samplingRate;
     std::string type;
+
+    template <size_t TSigma>
+    using MultiBitvectorString = fmc::string::MultiBitvectorPrefix<TSigma, fmc::bitvector::PairedBitvector2L_512_64k>;
+    template <size_t TSigma>
+    using PairedFlattenedBitvectors = fmc::string::PairedFlattenedBitvectors_512_64k<TSigma>;
+
     using Vs = std::variant<
-        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvectorPrefix16, SparseArray<std::tuple<uint32_t, uint32_t>>>,
+/*        fmc::BiFMIndex<Sigma, fmc::string::InterleavedBitvectorPrefix16, SparseArray<std::tuple<uint32_t, uint32_t>>>,
         fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>,
         fmc::BiFMIndex<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>,
         fmc::BiFMIndex<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>,
@@ -135,7 +141,15 @@ struct VarIndex {
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
-        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>*/
+        typename fmc::BiFMIndex<Sigma, MultiBitvectorString,      SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, PairedFlattenedBitvectors, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndexKStep<Sigma, MultiBitvectorString,      SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, PairedFlattenedBitvectors, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, MultiBitvectorString,      SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, PairedFlattenedBitvectors, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<3>,
+        typename fmc::BiFMIndexKStep<Sigma, MultiBitvectorString,      SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
+        typename fmc::BiFMIndexKStep<Sigma, PairedFlattenedBitvectors, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>
     >;
     Vs vs;
 
@@ -165,7 +179,15 @@ struct VarIndex {
     template <typename... Args>
     void emplace(std::string _type, Args&&... args) {
         type = _type;
-        if (type == "ibv16"             || type=="ibv16_1step")           _emplace< 0>(std::forward<Args>(args)...);
+        if (type == "pmbv512_64-nd" || type == "pmbv512_64_1step-nd")      _emplace< 0>(std::forward<Args>(args)...);
+        else if (type == "pfbv512_64-nd" || type == "pfbv512_64_1step-nd") _emplace< 1>(std::forward<Args>(args)...);
+        else if (type == "pmbv512_64_2step-nd")                            _emplace< 2>(std::forward<Args>(args)...);
+        else if (type == "pfbv512_64_2step-nd")                            _emplace< 3>(std::forward<Args>(args)...);
+        else if (type == "pmbv512_64_3step-nd")                            _emplace< 4>(std::forward<Args>(args)...);
+        else if (type == "pfbv512_64_3step-nd")                            _emplace< 5>(std::forward<Args>(args)...);
+        else if (type == "pmbv512_64_4step-nd")                            _emplace< 6>(std::forward<Args>(args)...);
+        else if (type == "pfbv512_64_4step-nd")                            _emplace< 7>(std::forward<Args>(args)...);
+/*        if (type == "ibv16"             || type=="ibv16_1step")           _emplace< 0>(std::forward<Args>(args)...);
         else if (type == "fbv64_64"     || type == "fbv64_64_1step")      _emplace< 1>(std::forward<Args>(args)...);
         else if (type == "fbv512_64"    || type == "fbv512_64_1step")     _emplace< 2>(std::forward<Args>(args)...);
         else if (type == "pfbv64_64"    || type == "pfbv64_64_1step")     _emplace< 3>(std::forward<Args>(args)...);
@@ -210,7 +232,7 @@ struct VarIndex {
         else if (type == "fbv64_64_4step-nd")   _emplace<42>(std::forward<Args>(args)...);
         else if (type == "fbv512_64_4step-nd")  _emplace<43>(std::forward<Args>(args)...);
         else if (type == "pfbv64_64_4step-nd")  _emplace<44>(std::forward<Args>(args)...);
-        else if (type == "pfbv512_64_4step-nd") _emplace<45>(std::forward<Args>(args)...);
+        else if (type == "pfbv512_64_4step-nd") _emplace<45>(std::forward<Args>(args)...);*/
         else throw std::runtime_error{"unknown index type: " + type};
     }
     template <typename Archive>
