@@ -140,6 +140,22 @@ auto cliNoKStep = clice::Argument {
     .desc   = "do not use kstep, even if available",
     .tags   = {"advanced"},
 };
+auto cliKStepOpt = clice::Argument {
+    .parent = &cli,
+    .args   = {"--kstep-opt"},
+    .desc   = "a list of optimizations",
+    .value  = std::vector<std::string>{},
+    //!TODO clice must be improved!
+/*    .mapping = {{
+        {"opt1=1",  "opt1=1"},
+        {"opt1=2",  "opt1=2"},
+        {"opt1_1r", "opt1_1r"},
+        {"opt2=1",  "opt2=1"},
+        {"opt2=2",  "opt2=2"},
+        {"opt3=2",  "opt3=2"},
+    }},*/
+    .tags   = {"advanced"},
+};
 
 
 template <typename Alphabet>
@@ -348,7 +364,108 @@ void runSearch() {
                             else       fmc::search_ng28/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
                         } else {
                             if (!Edit) fmc::search_ng28_kstep::search<false>(index, sub_queries, search_scheme, partition, res_cb, maxHits);
-                            else       fmc::search_ng28_kstep::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                            else {
+                                auto options = std::set<std::string>{};
+                                for (auto o : *cliKStepOpt) options.insert(o);
+
+                                auto match_options = [&](std::set<std::string> values) -> bool {
+                                    return values == options;
+                                };
+                                if (match_options({})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 0,
+                                        .opt1_1r = false,
+                                        .opt2 = 0,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=1"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 1,
+                                        .opt1_1r = false,
+                                        .opt2 = 0,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 2,
+                                        .opt1_1r = false,
+                                        .opt2 = 0,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=1", "opt1_1r"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 1,
+                                        .opt1_1r = true,
+                                        .opt2 = 0,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=2", "opt1_1r"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 2,
+                                        .opt1_1r = true,
+                                        .opt2 = 0,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt2=1"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 0,
+                                        .opt1_1r = false,
+                                        .opt2 = 1,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt3=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 0,
+                                        .opt1_1r = false,
+                                        .opt2 = 0,
+                                        .opt3 = 2,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=2", "opt1_1r", "opt2=1"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 2,
+                                        .opt1_1r = true,
+                                        .opt2 = 1,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=2", "opt1_1r", "opt3=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 2,
+                                        .opt1_1r = true,
+                                        .opt2 = 0,
+                                        .opt3 = 2,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=1", "opt1_1r", "opt2=1"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 1,
+                                        .opt1_1r = true,
+                                        .opt2 = 1,
+                                        .opt3 = 0,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=1", "opt1_1r", "opt3=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 1,
+                                        .opt1_1r = true,
+                                        .opt2 = 0,
+                                        .opt3 = 2,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=1", "opt1_1r", "opt2=1", "opt3=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 1,
+                                        .opt1_1r = true,
+                                        .opt2 = 1,
+                                        .opt3 = 2,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else if (match_options({"opt1=2", "opt1_1r", "opt2=1", "opt3=2"})) {
+                                    fmc::search_ng28_kstep::search<true, fmc::search_ng28_kstep::Optimizations {
+                                        .opt1 = 2,
+                                        .opt1_1r = true,
+                                        .opt2 = 1,
+                                        .opt3 = 2,
+                                    }>(index, sub_queries, search_scheme, partition, report, maxHits);
+                                } else {
+                                    throw std::runtime_error{"error unknown optimzation combination"};
+                                }
+                            }
                         }
 
                     }
