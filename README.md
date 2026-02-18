@@ -19,3 +19,14 @@ Approximate searches using Optimum Search Schemes
     $ sahara search --index somefastafile.fasta.idx --query queryfile.fasta --errors 2
 ```
 
+## Compile from Source
+
+To compile the source, download it through git and build it with cmake/make.
+At the end we execute the help page.
+```bash
+git clone https://github.com/seqan/sahara.git
+mkdir -p sahara/build && cd $_
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+./src/sahara/sahara --help
+```
