@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "fmt",
-      "version": "11.2.0",
+      "version": "12.1.0",
       "github_repository": "fmtlib/fmt",
       "git_tag": "{VERSION}",
     },
@@ -19,8 +19,9 @@
     },
     {
       "name": "fmindex-collection",
-      "version": "1.1.0",
+      "version": "1.5.2",
       "github_repository": "SGSSGene/fmindex-collection",
+      "git_tag": "60d19971a04b93f040403c517c1c67a5218cf661",
     },
     {
       "name": "clice",
@@ -34,8 +35,13 @@
     },
     {
       "name": "ivsigma",
-      "version": "0.4.1",
-      "github_repository": "iv-project/IVSigma"
+      "version": "1.0.0",
+      "github_repository": "iv-project/IVSigma",
+    },
+    {
+      "name": "channel",
+      "version": "0.2.1",
+      "github_repository": "SGSSGene/channel",
     },
     {
       "name": "xxHash",
@@ -49,6 +55,6 @@
       "git_tag_ignore": [
         "r[0-9]*"
       ]
-    }
+    },
   ]
 }
