@@ -4,7 +4,6 @@
 
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/fmindex/BiFMIndexKStepCursor.h>
-#include <fmindex-collection/string/PairedFlattenedBitvectors2L_b.h>
 
 template <typename Index, typename Alphabet>
 auto _emplaceRev() {
