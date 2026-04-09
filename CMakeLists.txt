@@ -8,7 +8,7 @@ project (sahara VERSION 1.0.0)
 
 find_package(OpenMP QUIET)
 include(cmake/CPM.cmake)
-CPMAddPackage("gh:SGSSGene/cpm.dependencies@1.0.2")
-CPMLoadDependenciesFile("${CMAKE_CURRENT_SOURCE_DIR}/cpm.dependencies")
+CPMAddPackage("gh:SGSSGene/cpmpack@1.1.1")
+loadCPMPACK("${CMAKE_CURRENT_SOURCE_DIR}/cpmpack.json")
 
 add_subdirectory(src/sahara)
