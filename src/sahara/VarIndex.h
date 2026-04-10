@@ -109,7 +109,9 @@ struct VarIndex {
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
-        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>,
+        typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<2>
+        #ifdef SAHARA_KSTEP_34
+        ,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::InterleavedBitvectorPrefix16, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::template SetKStep<3>,
@@ -135,6 +137,7 @@ struct VarIndex {
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::FlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_64_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>,
         typename fmc::BiFMIndexKStep<Sigma, fmc::string::PairedFlattenedBitvectors_512_64k, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim::template SetKStep<4>
+        #endif
     >;
     Vs vs;
 
@@ -185,6 +188,7 @@ struct VarIndex {
         else if (type == "fbv512_64_2step")     _emplace<18>(std::forward<Args>(args)...);
         else if (type == "pfbv64_64_2step")     _emplace<19>(std::forward<Args>(args)...);
         else if (type == "pfbv512_64_2step")    _emplace<20>(std::forward<Args>(args)...);
+        #ifdef SAHARA_KSTEP_34
         else if (type == "ibv16_3step")         _emplace<21>(std::forward<Args>(args)...);
         else if (type == "fbv64_64_3step")      _emplace<22>(std::forward<Args>(args)...);
         else if (type == "fbv512_64_3step")     _emplace<23>(std::forward<Args>(args)...);
@@ -210,6 +214,7 @@ struct VarIndex {
         else if (type == "fbv512_64_4step-nd")  _emplace<43>(std::forward<Args>(args)...);
         else if (type == "pfbv64_64_4step-nd")  _emplace<44>(std::forward<Args>(args)...);
         else if (type == "pfbv512_64_4step-nd") _emplace<45>(std::forward<Args>(args)...);
+        #endif
         else throw std::runtime_error{"unknown index type: " + type};
     }
     template <typename Archive>

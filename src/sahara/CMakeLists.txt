@@ -31,3 +31,6 @@ target_link_libraries(sahara
 
 set_property(TARGET sahara PROPERTY CXX_STANDARD 23)
 set_property(TARGET sahara PROPERTY CXX_EXTENSIONS FALSE)
+if (SAHARA_KSTEP_34)
+    target_compile_definitions(sahara PUBLIC SAHARA_KSTEP_34)
+endif()
