@@ -16,6 +16,7 @@
 #include <fmindex-collection/search/SearchNg27.h>
 #include <fmindex-collection/search/SearchNg28.h>
 #include <fmindex-collection/search/SearchNg28KStep.h>
+#include <fmindex-collection/search/SearchNg28Options.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -139,6 +140,21 @@ auto cliNoKStep = clice::Argument {
     .args   = {"--no-kstep"},
     .desc   = "do not use kstep, even if available",
     .tags   = {"advanced"},
+};
+auto cliNoNG28InDel = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-ng28-indel"},
+    .desc   = {"turns off strict testing on insertion/deletions"}
+};
+auto cliNoNG28Match = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-ng28-match"},
+    .desc   = {"turns off strict testing on match conditions"}
+};
+auto cliNoNG28Report = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-ng28-report"},
+    .desc   = {"turns off strict testing on report conditions"}
 };
 
 template <typename Alphabet>
@@ -343,8 +359,13 @@ void runSearch() {
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
                         if (cliNoKStep) {
-                            if (!Edit) fmc::search_ng28/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, report, maxHits);
-                            else       fmc::search_ng28/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, report, maxHits);
+                            auto options = fmc::search_ng28_options::Options {
+                                .indelCond  = !cliNoNG28InDel,
+                                .matchCond  = !cliNoNG28Match,
+                                .reportCond = !cliNoNG28Report,
+                            };
+                            if (!Edit) fmc::search_ng28_options/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
+                            else       fmc::search_ng28_options/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, options, report, maxHits);
                         } else {
                             if (!Edit) fmc::search_ng28_kstep::search<false>(index, sub_queries, search_scheme, partition, report, maxHits);
                             else       fmc::search_ng28_kstep::search<true>(index, sub_queries, search_scheme, partition, report, maxHits);
