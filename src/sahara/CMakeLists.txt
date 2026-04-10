@@ -5,14 +5,14 @@
 cmake_minimum_required (VERSION 3.14)
 
 add_executable(sahara
-    AdaptiveKmerIndex.cpp
+#    AdaptiveKmerIndex.cpp
     index.cpp
-    kmer-index.cpp
-    kmer-search.cpp
+#    kmer-index.cpp
+#    kmer-search.cpp
     main.cpp
     search.cpp
-    uni-index.cpp
-    uni-search.cpp
+#    uni-index.cpp
+#    uni-search.cpp
     search_scheme.cpp
     read_simulator.cpp
     columba_prepare.cpp
