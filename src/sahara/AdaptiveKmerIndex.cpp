@@ -11,7 +11,7 @@
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/locate.h>
 #include <fmindex-collection/search/all.h>
-#include <fmindex-collection/string/PairedFlattenedBitvectors_L0L1.h>
+#include <fmindex-collection/string/PairedFlattenedBitvectors2L.h>
 #include <fmindex-collection/suffixarray/DenseCSA.h>
 #include <fstream>
 #include <unordered_map>
@@ -98,8 +98,7 @@ void AdaptiveKmerIndex::save(cereal::BinaryOutputArchive& archive) const {
 void AdaptiveKmerIndex::search(std::span<uint8_t const> _query, std::function<void(size_t refid, size_t refpos)> const& _report) const {
      std::visit([&](auto const& index) {
         auto cursor = fmc::search_no_errors::search(index, _query);
-        for (auto [e, offset] : fmc::LocateLinear{index, cursor}) {
-            auto [seqId, seqPos] = e;
+        for (auto [seqId, seqPos, offset] : fmc::LocateLinear{index, cursor}) {
             _report(seqId, seqPos + offset);
         }
    }, pimpl->index);
