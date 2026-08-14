@@ -72,13 +72,13 @@ auto cliUseDna4 = clice::Argument {
 auto cliUseDna2 = clice::Argument {
     .parent = &cli,
     .args   = "--dna2",
-    .desc   = "use dna 2 alphabet, replace 'N' with random ACG or T and reduce AT->S and CG->W",
+    .desc   = "use dna 2 alphabet, replace 'N' with random ACG or T and reduce AT->W and CG->S",
 };
 
 auto cliIncludeReverse = clice::Argument {
     .parent = &cli,
     .args   = "--include-reverse",
-    .desc   = "Includes the reverse text to the index",
+    .desc   = "Includes the reverse text",
 };
 
 auto cliThreads = clice::Argument {
