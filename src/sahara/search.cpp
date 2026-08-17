@@ -165,6 +165,39 @@ void runSearch() {
 
     auto stopWatch = StopWatch();
 
+
+    bool loadReverseComplementQueries = !cliNoReverse;
+
+    // load Index
+    if (!std::filesystem::exists(*cliIndex)) {
+        throw error_fmt{"no valid index path at {}", *cliIndex};
+    }
+
+    using Index = VarIndex<Alphabet>;
+    auto [varIndex, storageManager] = [&]() -> std::tuple<Index, std::unique_ptr<std::any>> {
+        if (cliIndex->string().ends_with(".mmser")) {
+            if (cliPreloadIndex) {
+                return mmser::loadFileStream<Index>(*cliIndex);
+            } else {
+                return mmser::loadFile<Index>(*cliIndex);
+            }
+        } else {
+            auto varIndex = VarIndex<Alphabet>{};
+            auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
+            auto archive = cereal::BinaryInputArchive{ifs};
+            archive(varIndex);
+            return {std::move(varIndex), std::unique_ptr<std::any>{}};
+        }
+    }();
+    fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
+
+
+    if (varIndex.type.ends_with("-rev")) {
+        loadReverseComplementQueries = false;
+    }
+    timing.emplace_back("ld index", stopWatch.reset());
+
+
     // load fasta file
     size_t totalSize{};
     auto queries = std::vector<std::vector<uint8_t>>{};
@@ -174,7 +207,7 @@ void runSearch() {
         if (auto pos = ivs::verify_rank(queries.back()); pos) {
             throw error_fmt{"query '{}' ({}) has invalid character at position {} '{}'({:x})", record.id, queries.size(), *pos, record.seq[*pos], record.seq[*pos]};
         }
-        if (!cliNoReverse) {
+        if (loadReverseComplementQueries) {
             queries.emplace_back(ivs::reverse_complement_rank<Alphabet>(queries.back()));
         }
     }
@@ -204,41 +237,13 @@ void runSearch() {
 
 
     {
-        auto fwdQueries = queries.size() / (cliNoReverse?1:2);
+        auto fwdQueries = queries.size() / (!loadReverseComplementQueries?1:2);
         auto bwdQueries = queries.size() - fwdQueries;
         fmt::print("fwd queries: {}\n"
                    "bwd queries: {}\n",
                    fwdQueries, bwdQueries);
     }
 
-    if (!std::filesystem::exists(*cliIndex)) {
-        throw error_fmt{"no valid index path at {}", *cliIndex};
-    }
-
-    using Index = VarIndex<Alphabet>;
-    auto [varIndex, storageManager] = [&]() -> std::tuple<Index, std::unique_ptr<std::any>> {
-        if (cliIndex->string().ends_with(".mmser")) {
-            if (cliPreloadIndex) {
-                return mmser::loadFileStream<Index>(*cliIndex);
-            } else {
-                return mmser::loadFile<Index>(*cliIndex);
-            }
-        } else {
-            auto varIndex = VarIndex<Alphabet>{};
-            auto ifs     = std::ifstream{*cliIndex, std::ios::binary};
-            auto archive = cereal::BinaryInputArchive{ifs};
-            archive(varIndex);
-            return {std::move(varIndex), std::unique_ptr<std::any>{}};
-        }
-    }();
-    fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
-
-
-    auto revTextIncluded = varIndex.type.ends_with("-rev");
-    if (revTextIncluded && !cliNoReverse) {
-        queries.resize(queries.size()/2);
-    }
-    timing.emplace_back("ld index", stopWatch.reset());
 
     auto k = *cliNumErrors;
 
@@ -385,7 +390,8 @@ void runSearch() {
         }
         timing.emplace_back("search", stopWatch.reset());
 
-        auto results = std::vector<std::tuple<size_t, size_t, size_t, size_t>>{};
+        // queryId, refId, refPos, rev, errors
+        auto results = std::vector<std::tuple<size_t, size_t, size_t, bool, size_t>>{};
         results.reserve(totalHits);
         auto [_, _resultCursors] = *resultCursors;
         size_t totalNumberOfHits{};
@@ -400,16 +406,27 @@ void runSearch() {
                 for (auto [seqId, seqPos, rev, offset] : fmc::LocateLinear{index, cursor}) {
                     if (cliNoReverse && rev) continue;
                     if (!rev) {
-                        results.emplace_back(queryId, seqId, seqPos+offset, e);
+                        results.emplace_back(queryId, seqId, seqPos+offset, rev, e);
                     } else {
                         // Found the position inside the reversed SA
-                        results.emplace_back(queryId, seqId, seqPos-offset-cursor.steps+1, e);
+                        results.emplace_back(queryId, seqId, seqPos-offset-cursor.steps+1, rev, e);
                     }
 //                    fmt::print("match: qid: {}, seqid: {} pos: {}+{}+{}, rev: {}\n", queryId, seqId, seqPos, offset, cursor.steps, rev);
                 }
             } else {
+                bool rev = false;
+                bool trueQueryId = queryId;
+                if (loadReverseComplementQueries) {
+                    rev = queryId % 2 == 1;
+                    trueQueryId = queryId / 2;
+                }
                 for (auto [seqId, seqPos, offset] : fmc::LocateLinear{index, cursor}) {
-                    results.emplace_back(queryId, seqId, seqPos+offset, e);
+                    if (!rev) {
+                        results.emplace_back(trueQueryId, seqId, seqPos+offset, rev, e);
+                    } else {
+                        results.emplace_back(trueQueryId, seqId, seqPos+offset, rev, e);
+//                    fmt::print("match: qid: {}, seqid: {} pos: {}+{}+{}, rev: {}\n", queryId, seqId, seqPos, offset, cursor.steps, rev);
+                    }
                 }
             }
         }
@@ -423,8 +440,8 @@ void runSearch() {
         auto finishTime = std::chrono::steady_clock::now();
         {
             auto ofs = fopen(cliOutput->c_str(), "w");
-            for (auto const& [queryId, seqId, pos, e] : results) {
-                fmt::print(ofs, "{} {} {}\n", queryId, seqId, pos);
+            for (auto const& [queryId, seqId, pos, rev, e] : results) {
+                fmt::print(ofs, "{} {} {} {}\n", queryId, seqId, pos, (rev?"rev":"fwd"));
             }
             fclose(ofs);
         }

@@ -65,7 +65,7 @@ auto _emplaceRev(fmc::Sequences auto const& _input, size_t samplingRate, size_t 
                 auto ret = std::optional<ADEntry>{std::nullopt};
 
                 if (pos % samplingRate == 0) {
-                    auto _refId = _input.size() + inputSizes.size() - refId-1+seqOffset;
+                    auto _refId = inputSizes.size() - refId-1+seqOffset;
                     size_t extra = Index::Delim_v?1:0;
                     auto _pos   = (inputSizes[refId] - pos + inputSizes[refId] - 1 - extra) % inputSizes[refId];
                     ret = std::make_tuple(_refId, _pos, true);
