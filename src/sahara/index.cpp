@@ -183,7 +183,7 @@ void createIndex() {
 
     // save index
     auto indexPath = fmt::format("{}.{}.{}.idx", cli->string(), indexType, Sigma);
-    fmt::print("  output path: {}\n", indexPath);
+    fmt::print("  output path: {}{}\n", indexPath, (*cliOutputFormat == "mmser")?".mmser":"");
 
     if (*cliOutputFormat == "mmser") {
         mmser::saveFile(indexPath + ".mmser", index);
