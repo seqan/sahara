@@ -415,7 +415,7 @@ void runSearch() {
                 }
             } else {
                 bool rev = false;
-                bool trueQueryId = queryId;
+                auto trueQueryId = queryId;
                 if (loadReverseComplementQueries) {
                     rev = queryId % 2 == 1;
                     trueQueryId = queryId / 2;
