@@ -60,7 +60,7 @@ void runInfo() {
             return {std::move(varIndex), std::unique_ptr<std::any>{}};
         }
     }();
-    fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
+    fmt::print("samplingRate: {}\n", varIndex.samplingRate);
 
 
 
@@ -68,6 +68,9 @@ void runInfo() {
         return index.size();
     }, varIndex.vs);
 
+    fmt::print("index size: {}\n", indexSize);
+
+    std::array<size_t, Sigma> occurences{};
     std::visit([&]<typename Index>(Index const& index) {
         if constexpr ( requires() {
             { index.bwt };
@@ -75,7 +78,7 @@ void runInfo() {
             auto& bwt = index.bwt;
 
             std::vector<uint64_t> monotonicBlocks{};
-            bool currentValue = {};
+            uint8_t currentValue = 255;;
             size_t number{};
 
             monotonicBlocks.resize(10);
@@ -87,11 +90,10 @@ void runInfo() {
                     number = 1;
                     currentValue = s;
                 }
-
-
+                occurences[s] += 1;
                 for (size_t bs{1}; bs < monotonicBlocks.size(); ++bs) {
                     if ((i+1) % bs == 0) {
-                        if (number > bs) {
+                        if (number >= bs) {
                             monotonicBlocks[bs] += 1;
                         }
                     }
@@ -103,6 +105,11 @@ void runInfo() {
             }
         }
     }, varIndex.vs);
+    fmt::print("occurences:\n");
+    for (size_t i{0}; i < Sigma; ++i) {
+        fmt::print("{} appears {} ({}%) of {}\n", i, occurences[i], occurences[i] * 100 / indexSize, indexSize);
+    }
+
 }
 
 void app() {
