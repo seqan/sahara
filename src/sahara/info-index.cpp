@@ -69,36 +69,39 @@ void runInfo() {
     }, varIndex.vs);
 
     std::visit([&]<typename Index>(Index const& index) {
-        auto& bwt = index.bwt;
+        if constexpr ( requires() {
+            { index.bwt };
+        }) {
+            auto& bwt = index.bwt;
 
-        std::vector<uint64_t> monotonicBlocks{};
-        bool currentValue = {};
-        size_t number{};
+            std::vector<uint64_t> monotonicBlocks{};
+            bool currentValue = {};
+            size_t number{};
 
-        monotonicBlocks.resize(10);
-        for (size_t i{0}; i < indexSize; ++i) {
-            auto s = bwt.symbol(i);
-            if (currentValue == s) {
-                number += 1;
-            } else {
-                number = 1;
-                currentValue = s;
-            }
+            monotonicBlocks.resize(10);
+            for (size_t i{0}; i < indexSize; ++i) {
+                auto s = bwt.symbol(i);
+                if (currentValue == s) {
+                    number += 1;
+                } else {
+                    number = 1;
+                    currentValue = s;
+                }
 
 
-            for (size_t bs{1}; bs < monotonicBlocks.size(); ++bs) {
-                if ((i+1) % bs == 0) {
-                    if (number > bs) {
-                        monotonicBlocks[bs] += 1;
+                for (size_t bs{1}; bs < monotonicBlocks.size(); ++bs) {
+                    if ((i+1) % bs == 0) {
+                        if (number > bs) {
+                            monotonicBlocks[bs] += 1;
+                        }
                     }
                 }
             }
-        }
 
-        for (size_t i{1}; i < monotonicBlocks.size(); ++i) {
-            fmt::print("blocks of size {} ar in {} ({}%) of {} blocks monotonic\n", i, monotonicBlocks[i], monotonicBlocks[i] *100 / (indexSize / i), indexSize / i);
+            for (size_t i{1}; i < monotonicBlocks.size(); ++i) {
+                fmt::print("blocks of size {} ar in {} ({}%) of {} blocks monotonic\n", i, monotonicBlocks[i], monotonicBlocks[i] *100 / (indexSize / i), indexSize / i);
+            }
         }
-
     }, varIndex.vs);
 }
 
