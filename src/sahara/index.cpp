@@ -75,6 +75,18 @@ auto cliUseDna2 = clice::Argument {
     .desc   = "use dna 2 alphabet, replace 'N' with random ACG or T and reduce AT->W and CG->S",
 };
 
+auto cliRB = clice::Argument {
+    .parent  = &cliUseDna2,
+    .args    = "--rb",
+    .desc    = "use a run length bit vector",
+};
+
+auto cliSRB = clice::Argument {
+    .parent  = &cliUseDna2,
+    .args    = "--srb",
+    .desc    = "use a sparse run length bit vector",
+};
+
 auto cliIncludeReverse = clice::Argument {
     .parent = &cli,
     .args   = "--include-reverse",
@@ -172,6 +184,12 @@ void createIndex() {
     }
     if (cliIncludeReverse) {
         indexType += "-rev";
+    }
+    if (cliRB) {
+        indexType += "-rb";
+    }
+    if (cliSRB && !cliRB) {
+        indexType += "-srb";
     }
     if (cliIndexTypePaired) {
         indexType = "p" + indexType;

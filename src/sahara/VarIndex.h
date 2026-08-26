@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
+#include <fmindex-collection/bitvector/all.h>
 #include <fmindex-collection/fmindex-collection.h>
 #include <fmindex-collection/fmindex/BiFMIndexKStepCursor.h>
 
@@ -167,7 +168,7 @@ struct VarIndex {
     template <typename... Args>
     void emplace(std::string _type, Args&&... args) {
         type = _type;
-        if (type == "ibv16"             || type=="ibv16_1step")           _emplace< 0>(std::forward<Args>(args)...);
+        if (type == "ibv16"             || type == "ibv16_1step")         _emplace< 0>(std::forward<Args>(args)...);
         else if (type == "fbv64_64"     || type == "fbv64_64_1step")      _emplace< 1>(std::forward<Args>(args)...);
         else if (type == "fbv512_64"    || type == "fbv512_64_1step")     _emplace< 2>(std::forward<Args>(args)...);
         else if (type == "pfbv64_64"    || type == "pfbv64_64_1step")     _emplace< 3>(std::forward<Args>(args)...);
@@ -247,8 +248,12 @@ struct VarIndex<Alphabet, 2> {
     using Vs = std::variant<
         typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
         typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::RBBitvector<4, fmc::bitvector::Bitvector2L<512, 65536>, fmc::bitvector::Bitvector2L<512, 65536>>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::SparseRBBitvector<4, fmc::bitvector::Bitvector2L<512, 65536>, fmc::bitvector::Bitvector2L<512, 65536>>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t>>>::NoDelim,
         typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<64, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev,
-        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::Bitvector2L<512, 65536>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::RBBitvector<4, fmc::bitvector::Bitvector2L<512, 65536>, fmc::bitvector::Bitvector2L<512, 65536>>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev,
+        typename fmc::BiFMIndex<Sigma, fmc::string::WrappedBitvectorImpl<2, fmc::bitvector::SparseRBBitvector<4, fmc::bitvector::Bitvector2L<512, 65536>, fmc::bitvector::Bitvector2L<512, 65536>>>::RmSigma, SparseArray<std::tuple<uint32_t, uint32_t, bool>>>::NoDelim::ReuseRev
     >;
     Vs vs;
 
@@ -277,10 +282,14 @@ struct VarIndex<Alphabet, 2> {
     template <typename... Args>
     void emplace(std::string _type, Args&&... args) {
         type = _type;
-        if (type == "fbv64_64-nd")           _emplace<0>(std::forward<Args>(args)...);
-        else if (type == "fbv512_64-nd")     _emplace<1>(std::forward<Args>(args)...);
-        else if (type == "fbv64_64-nd-rev")  _emplaceRev<2>(std::forward<Args>(args)...);
-        else if (type == "fbv512_64-nd-rev") _emplaceRev<3>(std::forward<Args>(args)...);
+        if (type == "fbv64_64-nd")               _emplace<0>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd")         _emplace<1>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd-rb")      _emplace<2>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd-srb")     _emplace<3>(std::forward<Args>(args)...);
+        else if (type == "fbv64_64-nd-rev")      _emplaceRev<4>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd-rev")     _emplaceRev<5>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd-rev-rb")  _emplaceRev<6>(std::forward<Args>(args)...);
+        else if (type == "fbv512_64-nd-rev-srb") _emplaceRev<7>(std::forward<Args>(args)...);
         else throw std::runtime_error{"unknown index type: " + type};
     }
     template <typename Archive>
