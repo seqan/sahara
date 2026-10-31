@@ -73,6 +73,14 @@ auto cliNumErrors = clice::Argument {
     .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
     .value  = size_t{},
 };
+
+auto cliNumErrorsMin = clice::Argument {
+    .parent = &cli,
+    .args   = {"--min_errors"},
+    .desc   = "minimum number of errors",
+    .value  = size_t{},
+};
+
 auto cliNoReverse = clice::Argument {
     .parent = &cli,
     .args   = "--no-reverse",
@@ -156,6 +164,12 @@ auto cliNoNG28Report = clice::Argument {
     .args   = {"--no-ng28-report"},
     .desc   = {"turns off strict testing on report conditions"}
 };
+auto cliNoNG28DuplicateDetection = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-ng28-duplicate-detection"},
+    .desc   = {"turns off checking if fm-index cursor was already reported"}
+};
+
 
 template <typename Alphabet>
 void runSearch() {
@@ -226,12 +240,12 @@ void runSearch() {
         "  index:               {}\n"
         "  generator:           {}\n"
         "  dynamic expansion:   {}\n"
-        "  allowed errors:      {}\n"
+        "  allowed errors:      {}-{}\n"
         "  reverse complements: {}\n"
         "  search mode:         {}\n"
         "  max hits:            {}\n"
         "  output path:         {}\n",
-        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrors, !cliNoReverse,
+        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrorsMin, *cliNumErrors, !cliNoReverse,
         (*cliSearchMode == SearchMode::BestHits?"besthits":"all"), *cliMaxHits,
         *cliOutput);
 
@@ -246,6 +260,7 @@ void runSearch() {
 
 
     auto k = *cliNumErrors;
+    auto minK = *cliNumErrorsMin;
 
     auto generator = [&]() {
         auto iter = fmc::search_scheme::generator::all.find(*cliGenerator);
@@ -345,7 +360,7 @@ void runSearch() {
                     }
                 }};
             } else {
-                auto [search_scheme, partition]  = loadSearchSchemeUsePartition(0, k, Edit);
+                auto [search_scheme, partition]  = loadSearchSchemeUsePartition(minK, k, Edit);
                 timing.emplace_back("searchScheme", stopWatch.reset());
                 size_t maxHits = (*cliMaxHits > 0)?*cliMaxHits:std::numeric_limits<size_t>::max();
 
@@ -368,6 +383,7 @@ void runSearch() {
                                 .indelCond  = !cliNoNG28InDel,
                                 .matchCond  = !cliNoNG28Match,
                                 .reportCond = !cliNoNG28Report,
+                                .duplicateDetection = !cliNoNG28DuplicateDetection,
                             };
                             if (!Edit) fmc::search_ng28_options/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                             else       fmc::search_ng28_options/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, options, report, maxHits);
@@ -441,7 +457,7 @@ void runSearch() {
         {
             auto ofs = fopen(cliOutput->c_str(), "w");
             for (auto const& [queryId, seqId, pos, rev, e] : results) {
-                fmt::print(ofs, "{} {} {} {}\n", queryId, seqId, pos, (rev?"rev":"fwd"));
+                fmt::print(ofs, "{} {} {} {} {}\n", queryId, seqId, pos, (rev?"rev":"fwd"), e);
             }
             fclose(ofs);
         }
