@@ -311,22 +311,25 @@ void runSearch() {
         auto oss       = generator(minK, maxK, /*unused*/0, /*unused*/0);
         auto partition = fmc::search_scheme::createUniformPartition(oss, queries[0].size());
         if (edit) {
-            if (!cliDynGenerator) {
-            } else {
+            if (cliDynGenerator) {
                 partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
-                fmt::print("partition: {}\n", partition);
             }
-            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, indexSize));
+            fmt::print("partition: {}\n", partition);
+            {
+                auto oss2 = fmc::search_scheme::expandByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
+                fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss2, Sigma));
+                fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss2, Sigma, indexSize));
+            }
         } else {
-            if (!cliDynGenerator) {
-            } else {
+            if (cliDynGenerator) {
                 partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
-                fmt::print("partition: {}\n", partition);
             }
-            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, indexSize));
-
+            fmt::print("partition: {}\n", partition);
+            {
+                auto oss2 = fmc::search_scheme::expandByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
+                fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss2, Sigma));
+                fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss2, Sigma, indexSize));
+            }
         }
         return std::make_tuple(oss, partition);
     };
