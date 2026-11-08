@@ -10,7 +10,7 @@
   "packages": [
     {
       "name": "fmt",
-      "version": "12.2.0",
+      "version": "12.2.1",
       "github_repository": "fmtlib/fmt",
       "git_tag": "{VERSION}",
       "options": [
@@ -31,16 +31,16 @@
       "name": "fmindex-collection",
       "version": "1.7.0-git",
       "github_repository": "SGSSGene/fmindex-collection",
-      "git_tag": "0ce26bf7b96ae679352187beb7eb35516d8d3e88"
+      "git_tag": "114d279abfa4267f08e3743156b7235b01bfc2f3"
     },
     {
       "name": "clice",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "github_repository": "SGSSGene/clice"
     },
     {
       "name": "ivio",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "github_repository": "iv-project/IVio"
     },
     {
@@ -55,7 +55,7 @@
     },
     {
       "name": "xxHash",
-      "version": "0.8.3",
+      "version": "0.8.4",
       "github_repository": "Cyan4973/xxHash",
       "download_only": true,
       "cmake_commands": [
