@@ -17,6 +17,7 @@
 #include <fmindex-collection/search/SearchNg28.h>
 #include <fmindex-collection/search/SearchNg28KStep.h>
 #include <fmindex-collection/search/SearchNg28Options.h>
+#include <fmindex-collection/search/SearchNg28OptionsKStep.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -212,7 +213,6 @@ void runSearch() {
     }();
     fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
 
-
     if (varIndex.type.ends_with("-rev")) {
         loadReverseComplementQueries = false;
     }
@@ -388,7 +388,10 @@ void runSearch() {
                             res_cb(queryId+qidx, cursor, e);
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
-                        if (cliNoKStep) {
+                        constexpr bool hasKStep = requires() {
+                            { Index::KStep };
+                        };
+                        if (cliNoKStep || !hasKStep) {
                             auto options = fmc::search_ng28_options::Options {
                                 .indelCond  = !cliNoNG28InDel,
                                 .matchCond  = !cliNoNG28Match,
@@ -398,11 +401,18 @@ void runSearch() {
                             };
                             if (!Edit) fmc::search_ng28_options/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                             else       fmc::search_ng28_options/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, options, report, maxHits);
-                        } else {
-                            if (!Edit) fmc::search_ng28_kstep::search<false>(index, sub_queries, search_scheme, partition, report, maxHits);
-                            else       fmc::search_ng28_kstep::search<true>(index, sub_queries, search_scheme, partition, report, maxHits);
+                        } else if constexpr (hasKStep) {
+                            auto options = fmc::search_ng28_options_kstep::Options {
+                                .indelCond  = !cliNoNG28InDel,
+                                .matchCond  = !cliNoNG28Match,
+                                .reportCond = !cliNoNG28Report,
+                                .duplicateDetection = !cliNoNG28DuplicateDetection,
+                                .duplicateDetection2 = !cliNoNG28DuplicateDetection2,
+                                .allowKStep = false,
+                            };
+                            if (!Edit) fmc::search_ng28_options_kstep::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
+                            else       fmc::search_ng28_options_kstep::search<true>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                         }
-
                     }
                 }};
             }
