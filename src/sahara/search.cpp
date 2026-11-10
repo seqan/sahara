@@ -171,14 +171,6 @@ auto cliNoNG28DuplicateDetection = clice::Argument {
     .desc   = {"turns off checking if fm-index cursor was already reported"}
 };
 
-auto cliNoNG28DuplicateDetection2 = clice::Argument {
-    .parent = &cli,
-    .args   = {"--no-ng28-duplicate-detection2"},
-    .desc   = {"turns off checking if fm-index cursor was already reported"}
-};
-
-
-
 template <typename Alphabet>
 void runSearch() {
     constexpr size_t Sigma = Alphabet::size();
@@ -397,7 +389,6 @@ void runSearch() {
                                 .matchCond  = !cliNoNG28Match,
                                 .reportCond = !cliNoNG28Report,
                                 .duplicateDetection = !cliNoNG28DuplicateDetection,
-                                .duplicateDetection2 = !cliNoNG28DuplicateDetection2,
                             };
                             if (!Edit) fmc::search_ng28_options/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                             else       fmc::search_ng28_options/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, options, report, maxHits);
@@ -407,7 +398,6 @@ void runSearch() {
                                 .matchCond  = !cliNoNG28Match,
                                 .reportCond = !cliNoNG28Report,
                                 .duplicateDetection = !cliNoNG28DuplicateDetection,
-                                .duplicateDetection2 = !cliNoNG28DuplicateDetection2,
                                 .allowKStep = false,
                             };
                             if (!Edit) fmc::search_ng28_options_kstep::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
