@@ -17,6 +17,7 @@
 #include <fmindex-collection/search/SearchNg28.h>
 #include <fmindex-collection/search/SearchNg28KStep.h>
 #include <fmindex-collection/search/SearchNg28Options.h>
+#include <fmindex-collection/search/SearchNg28OptionsKStep.h>
 #include <fstream>
 #include <ivio/ivio.h>
 #include <ivsigma/ivsigma.h>
@@ -73,6 +74,14 @@ auto cliNumErrors = clice::Argument {
     .desc   = "number of allowed errors (number of allowed differences insert/substitute and deletions)",
     .value  = size_t{},
 };
+
+auto cliNumErrorsMin = clice::Argument {
+    .parent = &cli,
+    .args   = {"--min_errors"},
+    .desc   = "minimum number of errors",
+    .value  = size_t{},
+};
+
 auto cliNoReverse = clice::Argument {
     .parent = &cli,
     .args   = "--no-reverse",
@@ -156,6 +165,11 @@ auto cliNoNG28Report = clice::Argument {
     .args   = {"--no-ng28-report"},
     .desc   = {"turns off strict testing on report conditions"}
 };
+auto cliNoNG28DuplicateDetection = clice::Argument {
+    .parent = &cli,
+    .args   = {"--no-ng28-duplicate-detection"},
+    .desc   = {"turns off checking if fm-index cursor was already reported"}
+};
 
 template <typename Alphabet>
 void runSearch() {
@@ -191,7 +205,6 @@ void runSearch() {
     }();
     fmt::print("  samplingRate: {}\n", varIndex.samplingRate);
 
-
     if (varIndex.type.ends_with("-rev")) {
         loadReverseComplementQueries = false;
     }
@@ -226,12 +239,12 @@ void runSearch() {
         "  index:               {}\n"
         "  generator:           {}\n"
         "  dynamic expansion:   {}\n"
-        "  allowed errors:      {}\n"
+        "  allowed errors:      {}-{}\n"
         "  reverse complements: {}\n"
         "  search mode:         {}\n"
         "  max hits:            {}\n"
         "  output path:         {}\n",
-        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrors, !cliNoReverse,
+        *cliQuery, *cliIndex, *cliGenerator, (bool)cliDynGenerator, *cliNumErrorsMin, *cliNumErrors, !cliNoReverse,
         (*cliSearchMode == SearchMode::BestHits?"besthits":"all"), *cliMaxHits,
         *cliOutput);
 
@@ -246,6 +259,7 @@ void runSearch() {
 
 
     auto k = *cliNumErrors;
+    auto minK = *cliNumErrorsMin;
 
     auto generator = [&]() {
         auto iter = fmc::search_scheme::generator::all.find(*cliGenerator);
@@ -296,22 +310,25 @@ void runSearch() {
         auto oss       = generator(minK, maxK, /*unused*/0, /*unused*/0);
         auto partition = fmc::search_scheme::createUniformPartition(oss, queries[0].size());
         if (edit) {
-            if (!cliDynGenerator) {
-            } else {
+            if (cliDynGenerator) {
                 partition = optimizeByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
-                fmt::print("partition: {}\n", partition);
             }
-            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss, Sigma, indexSize));
+            fmt::print("partition: {}\n", partition);
+            {
+                auto oss2 = fmc::search_scheme::expandByWNCTopDown</*Edit=*/true>(oss, len, Sigma, indexSize, 1);
+                fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/true>(oss2, Sigma));
+                fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/true>(oss2, Sigma, indexSize));
+            }
         } else {
-            if (!cliDynGenerator) {
-            } else {
+            if (cliDynGenerator) {
                 partition = optimizeByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
-                fmt::print("partition: {}\n", partition);
             }
-            fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss, Sigma));
-            fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss, Sigma, indexSize));
-
+            fmt::print("partition: {}\n", partition);
+            {
+                auto oss2 = fmc::search_scheme::expandByWNCTopDown</*Edit=*/false>(oss, len, Sigma, indexSize, 1);
+                fmt::print("node count: {}\n", fmc::search_scheme::nodeCount</*Edit=*/false>(oss2, Sigma));
+                fmt::print("weighted node count: {}\n", fmc::search_scheme::weightedNodeCount</*Edit=*/false>(oss2, Sigma, indexSize));
+            }
         }
         return std::make_tuple(oss, partition);
     };
@@ -345,7 +362,7 @@ void runSearch() {
                     }
                 }};
             } else {
-                auto [search_scheme, partition]  = loadSearchSchemeUsePartition(0, k, Edit);
+                auto [search_scheme, partition]  = loadSearchSchemeUsePartition(minK, k, Edit);
                 timing.emplace_back("searchScheme", stopWatch.reset());
                 size_t maxHits = (*cliMaxHits > 0)?*cliMaxHits:std::numeric_limits<size_t>::max();
 
@@ -363,19 +380,29 @@ void runSearch() {
                             res_cb(queryId+qidx, cursor, e);
                         };
                         auto sub_queries = std::span{queries.begin()+qidx, queries.begin()+qidx2};
-                        if (cliNoKStep) {
+                        constexpr bool hasKStep = requires() {
+                            { Index::KStep };
+                        };
+                        if (cliNoKStep || !hasKStep) {
                             auto options = fmc::search_ng28_options::Options {
                                 .indelCond  = !cliNoNG28InDel,
                                 .matchCond  = !cliNoNG28Match,
                                 .reportCond = !cliNoNG28Report,
+                                .duplicateDetection = !cliNoNG28DuplicateDetection,
                             };
                             if (!Edit) fmc::search_ng28_options/*_kstep*/::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                             else       fmc::search_ng28_options/*_kstep*/::search<true >(index, sub_queries, search_scheme, partition, options, report, maxHits);
-                        } else {
-                            if (!Edit) fmc::search_ng28_kstep::search<false>(index, sub_queries, search_scheme, partition, report, maxHits);
-                            else       fmc::search_ng28_kstep::search<true>(index, sub_queries, search_scheme, partition, report, maxHits);
+                        } else if constexpr (hasKStep) {
+                            auto options = fmc::search_ng28_options_kstep::Options {
+                                .indelCond  = !cliNoNG28InDel,
+                                .matchCond  = !cliNoNG28Match,
+                                .reportCond = !cliNoNG28Report,
+                                .duplicateDetection = !cliNoNG28DuplicateDetection,
+                                .allowKStep = false,
+                            };
+                            if (!Edit) fmc::search_ng28_options_kstep::search<false>(index, sub_queries, search_scheme, partition, options, report, maxHits);
+                            else       fmc::search_ng28_options_kstep::search<true>(index, sub_queries, search_scheme, partition, options, report, maxHits);
                         }
-
                     }
                 }};
             }
@@ -441,7 +468,7 @@ void runSearch() {
         {
             auto ofs = fopen(cliOutput->c_str(), "w");
             for (auto const& [queryId, seqId, pos, rev, e] : results) {
-                fmt::print(ofs, "{} {} {} {}\n", queryId, seqId, pos, (rev?"rev":"fwd"));
+                fmt::print(ofs, "{} {} {} {} {}\n", queryId, seqId, pos, (rev?"rev":"fwd"), e);
             }
             fclose(ofs);
         }
